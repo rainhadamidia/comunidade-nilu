@@ -10,7 +10,10 @@ import {
   User,
   LogOut,
   Menu,
-  X
+  X,
+  Sparkles,
+  Calendar,
+  Shield
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
@@ -24,6 +27,8 @@ interface LayoutProps {
 const navItems = [
   { icon: Home, label: 'Home', path: '/' },
   { icon: Map, label: 'Mapa de Desafios', path: '/challenges' },
+  { icon: Calendar, label: 'Desafios Anuais', path: '/annual-challenges' },
+  { icon: Sparkles, label: 'Autocuidado', path: '/self-care' },
   { icon: Users, label: 'Praça dos Iluminnados', path: '/community' },
   { icon: Heart, label: 'Espaço Seguro', path: '/safe-space' },
   { icon: BookOpen, label: 'Conteúdos', path: '/contents' },
@@ -102,7 +107,7 @@ export function Layout({ children }: LayoutProps) {
             <div className="text-3xl">{user.avatar}</div>
             <div className="flex-1 min-w-0">
               <p className="font-medium truncate">{user.nickname}</p>
-              <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+              <p className="text-xs text-accent font-bold">{user.points || 0} pontos</p>
             </div>
           </div>
         )}
@@ -121,6 +126,18 @@ export function Layout({ children }: LayoutProps) {
               <span>{item.label}</span>
             </button>
           ))}
+          {user?.isAdmin && (
+            <button
+              onClick={() => handleNavigation('/admin')}
+              className={cn(
+                'nav-item mt-2 border border-dashed border-primary/30',
+                location.pathname === '/admin' && 'nav-item-active'
+              )}
+            >
+              <Shield className="w-5 h-5 text-primary" />
+              <span>Admin</span>
+            </button>
+          )}
         </nav>
 
         <button
