@@ -13,7 +13,9 @@ import {
   X,
   Sparkles,
   Calendar,
-  Shield
+  Shield,
+  MessageCircle,
+  Trophy
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
@@ -26,6 +28,8 @@ interface LayoutProps {
 
 const navItems = [
   { icon: Home, label: 'Home', path: '/' },
+  { icon: MessageCircle, label: 'Feed', path: '/feed' },
+  { icon: Trophy, label: 'Ranking', path: '/ranking' },
   { icon: Map, label: 'Mapa de Desafios', path: '/challenges' },
   { icon: Calendar, label: 'Desafios Anuais', path: '/annual-challenges' },
   { icon: Sparkles, label: 'Autocuidado', path: '/self-care' },
