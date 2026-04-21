@@ -3,9 +3,13 @@ import { Layout } from '@/components/Layout';
 import { communityMembers, activities } from '@/lib/mockData';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
-import { Users, Heart, Hand, Circle, Sparkles } from 'lucide-react';
+import { Users, Heart, Hand, Circle, Sparkles, Wifi } from 'lucide-react';
+import { usePresence } from '@/hooks/usePresence';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function Community() {
+  const { user } = useAuth();
+  const { onlineUsers, onlineCount } = usePresence();
   const [waved, setWaved] = useState<string[]>([]);
   const [liked, setLiked] = useState<string[]>([]);
 
