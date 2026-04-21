@@ -51,6 +51,47 @@ export default function Community() {
           </p>
         </div>
 
+        {/* Online Now - Real-time presence */}
+        <section className="glass-card p-5 border-accent/30">
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <Wifi className="w-5 h-5 text-accent" />
+                <span className="absolute -top-1 -right-1 w-2 h-2 bg-accent rounded-full animate-pulse" />
+              </div>
+              <h2 className="font-semibold">Online agora</h2>
+              <span className="text-xs px-2 py-0.5 rounded-full bg-accent/20 text-accent font-medium">
+                {onlineCount}
+              </span>
+            </div>
+            <span className="text-xs text-muted-foreground">Atualizado em tempo real</span>
+          </div>
+
+          {onlineCount === 0 ? (
+            <p className="text-sm text-muted-foreground py-2">
+              Ninguém online agora. Você é o primeiro a chegar! ✨
+            </p>
+          ) : (
+            <div className="flex flex-wrap gap-3">
+              {onlineUsers.map((u) => (
+                <div
+                  key={u.user_id}
+                  className="flex items-center gap-2 px-3 py-2 rounded-full bg-muted/30 border border-border/50 hover:border-accent/50 transition-all"
+                  title={u.display_name}
+                >
+                  <div className="relative">
+                    <span className="text-xl leading-none">{u.avatar_url || '✨'}</span>
+                    <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-accent rounded-full ring-2 ring-background" />
+                  </div>
+                  <span className="text-sm font-medium truncate max-w-[120px]">
+                    {u.user_id === user?.id ? `${u.display_name} (você)` : u.display_name}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Members Grid */}
           <div className="lg:col-span-2 space-y-4">
