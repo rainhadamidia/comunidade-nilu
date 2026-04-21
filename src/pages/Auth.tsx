@@ -25,17 +25,20 @@ export default function Auth() {
 
     try {
       if (isLogin) {
-        const success = await login(email, password);
-        if (success) {
+        const result = await login(email, password);
+        if (result.success) {
           toast({
             title: 'Bem-vindo de volta!',
             description: 'Sua jornada continua.',
           });
           navigate('/');
         } else {
+          const isUnconfirmed = result.error?.toLowerCase().includes('confirm');
           toast({
-            title: 'Erro ao entrar',
-            description: 'E-mail ou senha incorretos.',
+            title: isUnconfirmed ? 'E-mail não confirmado' : 'Erro ao entrar',
+            description: isUnconfirmed
+              ? 'Confirme seu e-mail antes de entrar. Verifique sua caixa de entrada.'
+              : (result.error || 'E-mail ou senha incorretos.'),
             variant: 'destructive',
           });
         }
@@ -48,17 +51,25 @@ export default function Auth() {
           });
           return;
         }
-        const success = await signup(email, password, nickname, selectedAvatar);
-        if (success) {
-          toast({
-            title: 'Conta criada!',
-            description: 'Bem-vindo à sua jornada de iluminação.',
-          });
-          navigate('/');
+        const result = await signup(email, password, nickname, selectedAvatar);
+        if (result.success) {
+          if (result.needsConfirmation) {
+            toast({
+              title: 'Conta criada! ✉️',
+              description: 'Enviamos um link de confirmação para seu e-mail. Confirme antes de entrar.',
+            });
+            setIsLogin(true);
+          } else {
+            toast({
+              title: 'Conta criada!',
+              description: 'Bem-vindo à sua jornada de iluminação.',
+            });
+            navigate('/');
+          }
         } else {
           toast({
             title: 'Erro ao criar conta',
-            description: 'Este e-mail já está em uso.',
+            description: result.error || 'Este e-mail já está em uso.',
             variant: 'destructive',
           });
         }
