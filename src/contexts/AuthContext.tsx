@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import type { Session, User as SupabaseUser } from '@supabase/supabase-js';
 
 export interface SelfCareLog {
   id: string;
@@ -46,10 +48,11 @@ interface PointAction {
 
 interface AuthContextType {
   user: User | null;
+  session: Session | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
-  signup: (email: string, password: string, nickname: string, avatar: string) => Promise<boolean>;
-  logout: () => void;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  signup: (email: string, password: string, nickname: string, avatar: string) => Promise<{ success: boolean; error?: string; needsConfirmation?: boolean }>;
+  logout: () => Promise<void>;
   updateProgress: (challengeId: number) => void;
   completeAnnualChallenge: (challengeId: number) => void;
   addPoints: (amount: number, action: string) => void;
