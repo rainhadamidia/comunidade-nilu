@@ -22,17 +22,22 @@ const PresenceContext = createContext<PresenceContextValue>({
 const PRESENCE_CHANNEL = 'iluminnados-presence';
 
 export function PresenceProvider({ children }: { children: ReactNode }) {
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
   const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([]);
 
+  const userId = user?.id;
+  const nickname = user?.nickname;
+  const avatar = user?.avatar;
+  const email = user?.email;
+
   useEffect(() => {
-    if (!user) {
+    if (!userId) {
       setOnlineUsers([]);
       return;
     }
 
     const channel = supabase.channel(PRESENCE_CHANNEL, {
-      config: { presence: { key: user.id } },
+      config: { presence: { key: userId } },
     });
 
     channel
@@ -50,18 +55,29 @@ export function PresenceProvider({ children }: { children: ReactNode }) {
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
           await channel.track({
-            user_id: user.id,
-            display_name: profile?.nickname || user.email?.split('@')[0] || 'Iluminnado',
-            avatar_url: profile?.avatar || null,
+            user_id: userId,
+            display_name: nickname || email?.split('@')[0] || 'Iluminnado',
+            avatar_url: avatar || null,
             online_at: new Date().toISOString(),
           });
         }
       });
 
+    // Heartbeat: re-track every 30s to keep presence fresh
+    const heartbeat = setInterval(() => {
+      channel.track({
+        user_id: userId,
+        display_name: nickname || email?.split('@')[0] || 'Iluminnado',
+        avatar_url: avatar || null,
+        online_at: new Date().toISOString(),
+      });
+    }, 30000);
+
     return () => {
+      clearInterval(heartbeat);
       supabase.removeChannel(channel);
     };
-  }, [user, profile?.nickname, profile?.avatar]);
+  }, [userId, nickname, avatar, email]);
 
   return (
     <PresenceContext.Provider value={{ onlineUsers, onlineCount: onlineUsers.length }}>
