@@ -85,43 +85,94 @@ const POINTS = {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [userTips, setUserTips] = useState<UserTip[]>([]);
   const [recentPointActions, setRecentPointActions] = useState<PointAction[]>([]);
 
   useEffect(() => {
-    const savedUser = localStorage.getItem('iluminnados_user');
-    if (savedUser) {
-      const parsedUser = JSON.parse(savedUser);
-      // Ensure new fields exist
-      setUser({
-        ...parsedUser,
-        points: parsedUser.points || 0,
-        activeDays: parsedUser.activeDays || [],
-        selfCareLogs: parsedUser.selfCareLogs || [],
-        completedAnnualChallenges: parsedUser.completedAnnualChallenges || [],
-        lastCheckIn: parsedUser.lastCheckIn || null,
-      });
-    }
-    
+    // Set up auth listener FIRST, then check existing session
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession);
+      if (newSession?.user) {
+        // Defer profile loading to avoid deadlocks
+        setTimeout(() => loadUserProfile(newSession.user), 0);
+      } else {
+        setUser(null);
+        localStorage.removeItem('iluminnados_user');
+      }
+    });
+
+    supabase.auth.getSession().then(({ data: { session: existingSession } }) => {
+      setSession(existingSession);
+      if (existingSession?.user) {
+        loadUserProfile(existingSession.user);
+      } else {
+        setIsLoading(false);
+      }
+    });
+
     const savedTips = localStorage.getItem('iluminnados_tips');
     if (savedTips) {
       setUserTips(JSON.parse(savedTips));
     }
-    
-    setIsLoading(false);
+
+    return () => subscription.unsubscribe();
   }, []);
+
+  const loadUserProfile = async (supaUser: SupabaseUser) => {
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', supaUser.id)
+        .maybeSingle();
+
+      const { data: roles } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', supaUser.id);
+
+      const isAdmin = roles?.some(r => r.role === 'admin') ?? false;
+
+      // Merge with localStorage gamification data (kept client-side for now)
+      const localKey = `iluminnados_user_${supaUser.id}`;
+      const savedLocal = localStorage.getItem(localKey);
+      const localData = savedLocal ? JSON.parse(savedLocal) : {};
+
+      const mergedUser: User = {
+        id: supaUser.id,
+        email: supaUser.email ?? profile?.email ?? '',
+        nickname: profile?.display_name ?? supaUser.email?.split('@')[0] ?? 'Usuário',
+        avatar: profile?.avatar_url ?? localData.avatar ?? AVATARS[0],
+        progress: localData.progress ?? 0,
+        completedChallenges: localData.completedChallenges ?? [],
+        completedAnnualChallenges: localData.completedAnnualChallenges ?? [],
+        points: profile?.points ?? 0,
+        activeDays: localData.activeDays ?? [],
+        selfCareLogs: localData.selfCareLogs ?? [],
+        lastCheckIn: localData.lastCheckIn ?? null,
+        isAdmin,
+      };
+
+      setUser(mergedUser);
+    } catch (e) {
+      console.error('Error loading profile:', e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const saveUser = (updatedUser: User) => {
     setUser(updatedUser);
-    localStorage.setItem('iluminnados_user', JSON.stringify(updatedUser));
-    
-    // Update in users list too
-    const savedUsers = JSON.parse(localStorage.getItem('iluminnados_users') || '[]');
-    const updatedUsers = savedUsers.map((u: any) => 
-      u.id === updatedUser.id ? { ...u, ...updatedUser } : u
-    );
-    localStorage.setItem('iluminnados_users', JSON.stringify(updatedUsers));
+    // Persist gamification data per-user locally
+    localStorage.setItem(`iluminnados_user_${updatedUser.id}`, JSON.stringify(updatedUser));
+    // Sync points to Supabase profile
+    supabase
+      .from('profiles')
+      .update({ points: updatedUser.points })
+      .eq('user_id', updatedUser.id)
+      .then();
   };
 
   const addPointAction = (action: string, points: number) => {
