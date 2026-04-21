@@ -182,66 +182,51 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     ]);
   };
 
-  const login = async (email: string, password: string): Promise<boolean> => {
-    const savedUsers = JSON.parse(localStorage.getItem('iluminnados_users') || '[]');
-    const foundUser = savedUsers.find((u: any) => u.email === email && u.password === password);
-    
-    if (foundUser) {
-      const { password: _, ...userWithoutPassword } = foundUser;
-      const enhancedUser = {
-        ...userWithoutPassword,
-        points: userWithoutPassword.points || 0,
-        activeDays: userWithoutPassword.activeDays || [],
-        selfCareLogs: userWithoutPassword.selfCareLogs || [],
-        completedAnnualChallenges: userWithoutPassword.completedAnnualChallenges || [],
-        lastCheckIn: userWithoutPassword.lastCheckIn || null,
-      };
-      setUser(enhancedUser);
-      localStorage.setItem('iluminnados_user', JSON.stringify(enhancedUser));
-      return true;
+  const login = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      return { success: false, error: error.message };
     }
-    return false;
+    return { success: true };
   };
 
-  const signup = async (email: string, password: string, nickname: string, avatar: string): Promise<boolean> => {
-    const savedUsers = JSON.parse(localStorage.getItem('iluminnados_users') || '[]');
-    
-    if (savedUsers.some((u: any) => u.email === email)) {
-      return false;
-    }
+  const signup = async (email: string, password: string, nickname: string, avatar: string) => {
+    const redirectUrl = `${window.location.origin}/`;
+    const chosenAvatar = avatar || AVATARS[Math.floor(Math.random() * AVATARS.length)];
 
-    const isAdmin = email === 'admin@iluminnados.com';
-
-    const newUser: User & { password: string } = {
-      id: Date.now().toString(),
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      nickname,
-      avatar: avatar || AVATARS[Math.floor(Math.random() * AVATARS.length)],
-      progress: 0,
-      completedChallenges: [],
-      completedAnnualChallenges: [],
-      points: 0,
-      activeDays: [],
-      selfCareLogs: [],
-      lastCheckIn: null,
-      isAdmin,
-    };
+      options: {
+        emailRedirectTo: redirectUrl,
+        data: {
+          display_name: nickname,
+          avatar_url: chosenAvatar,
+        },
+      },
+    });
 
-    savedUsers.push(newUser);
-    localStorage.setItem('iluminnados_users', JSON.stringify(savedUsers));
-    
-    const { password: _, ...userWithoutPassword } = newUser;
-    setUser(userWithoutPassword);
-    localStorage.setItem('iluminnados_user', JSON.stringify(userWithoutPassword));
-    
-    return true;
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    // If user created but no session => email confirmation required
+    const needsConfirmation = !data.session;
+
+    // Patch the auto-created profile with avatar and nickname
+    if (data.user) {
+      await supabase
+        .from('profiles')
+        .update({ display_name: nickname, avatar_url: chosenAvatar })
+        .eq('user_id', data.user.id);
+    }
+
+    return { success: true, needsConfirmation };
   };
 
-  const logout = () => {
-    setUser(null);
+  const logout = async () => {
     setRecentPointActions([]);
-    localStorage.removeItem('iluminnados_user');
+    await supabase.auth.signOut();
   };
 
   const addPoints = (amount: number, action: string) => {
