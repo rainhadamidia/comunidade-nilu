@@ -16,6 +16,8 @@ import Profile from "./pages/Profile";
 import SelfCare from "./pages/SelfCare";
 import AnnualChallenges from "./pages/AnnualChallenges";
 import Admin from "./pages/Admin";
+import Feed from "./pages/Feed";
+import Ranking from "./pages/Ranking";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +36,8 @@ const App = () => (
             <Route path="/challenges" element={<Challenges />} />
             <Route path="/annual-challenges" element={<AnnualChallenges />} />
             <Route path="/community" element={<Community />} />
+            <Route path="/feed" element={<Feed />} />
+            <Route path="/ranking" element={<Ranking />} />
             <Route path="/safe-space" element={<SafeSpace />} />
             <Route path="/contents" element={<Contents />} />
             <Route path="/self-care" element={<SelfCare />} />

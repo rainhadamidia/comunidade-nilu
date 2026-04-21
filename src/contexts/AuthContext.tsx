@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import type { Session, User as SupabaseUser } from '@supabase/supabase-js';
 
 export interface SelfCareLog {
   id: string;
@@ -46,10 +48,11 @@ interface PointAction {
 
 interface AuthContextType {
   user: User | null;
+  session: Session | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
-  signup: (email: string, password: string, nickname: string, avatar: string) => Promise<boolean>;
-  logout: () => void;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  signup: (email: string, password: string, nickname: string, avatar: string) => Promise<{ success: boolean; error?: string; needsConfirmation?: boolean }>;
+  logout: () => Promise<void>;
   updateProgress: (challengeId: number) => void;
   completeAnnualChallenge: (challengeId: number) => void;
   addPoints: (amount: number, action: string) => void;
@@ -82,43 +85,94 @@ const POINTS = {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [userTips, setUserTips] = useState<UserTip[]>([]);
   const [recentPointActions, setRecentPointActions] = useState<PointAction[]>([]);
 
   useEffect(() => {
-    const savedUser = localStorage.getItem('iluminnados_user');
-    if (savedUser) {
-      const parsedUser = JSON.parse(savedUser);
-      // Ensure new fields exist
-      setUser({
-        ...parsedUser,
-        points: parsedUser.points || 0,
-        activeDays: parsedUser.activeDays || [],
-        selfCareLogs: parsedUser.selfCareLogs || [],
-        completedAnnualChallenges: parsedUser.completedAnnualChallenges || [],
-        lastCheckIn: parsedUser.lastCheckIn || null,
-      });
-    }
-    
+    // Set up auth listener FIRST, then check existing session
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession);
+      if (newSession?.user) {
+        // Defer profile loading to avoid deadlocks
+        setTimeout(() => loadUserProfile(newSession.user), 0);
+      } else {
+        setUser(null);
+        localStorage.removeItem('iluminnados_user');
+      }
+    });
+
+    supabase.auth.getSession().then(({ data: { session: existingSession } }) => {
+      setSession(existingSession);
+      if (existingSession?.user) {
+        loadUserProfile(existingSession.user);
+      } else {
+        setIsLoading(false);
+      }
+    });
+
     const savedTips = localStorage.getItem('iluminnados_tips');
     if (savedTips) {
       setUserTips(JSON.parse(savedTips));
     }
-    
-    setIsLoading(false);
+
+    return () => subscription.unsubscribe();
   }, []);
+
+  const loadUserProfile = async (supaUser: SupabaseUser) => {
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', supaUser.id)
+        .maybeSingle();
+
+      const { data: roles } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', supaUser.id);
+
+      const isAdmin = roles?.some(r => r.role === 'admin') ?? false;
+
+      // Merge with localStorage gamification data (kept client-side for now)
+      const localKey = `iluminnados_user_${supaUser.id}`;
+      const savedLocal = localStorage.getItem(localKey);
+      const localData = savedLocal ? JSON.parse(savedLocal) : {};
+
+      const mergedUser: User = {
+        id: supaUser.id,
+        email: supaUser.email ?? profile?.email ?? '',
+        nickname: profile?.display_name ?? supaUser.email?.split('@')[0] ?? 'Usuário',
+        avatar: profile?.avatar_url ?? localData.avatar ?? AVATARS[0],
+        progress: localData.progress ?? 0,
+        completedChallenges: localData.completedChallenges ?? [],
+        completedAnnualChallenges: localData.completedAnnualChallenges ?? [],
+        points: profile?.points ?? 0,
+        activeDays: localData.activeDays ?? [],
+        selfCareLogs: localData.selfCareLogs ?? [],
+        lastCheckIn: localData.lastCheckIn ?? null,
+        isAdmin,
+      };
+
+      setUser(mergedUser);
+    } catch (e) {
+      console.error('Error loading profile:', e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const saveUser = (updatedUser: User) => {
     setUser(updatedUser);
-    localStorage.setItem('iluminnados_user', JSON.stringify(updatedUser));
-    
-    // Update in users list too
-    const savedUsers = JSON.parse(localStorage.getItem('iluminnados_users') || '[]');
-    const updatedUsers = savedUsers.map((u: any) => 
-      u.id === updatedUser.id ? { ...u, ...updatedUser } : u
-    );
-    localStorage.setItem('iluminnados_users', JSON.stringify(updatedUsers));
+    // Persist gamification data per-user locally
+    localStorage.setItem(`iluminnados_user_${updatedUser.id}`, JSON.stringify(updatedUser));
+    // Sync points to Supabase profile
+    supabase
+      .from('profiles')
+      .update({ points: updatedUser.points })
+      .eq('user_id', updatedUser.id)
+      .then();
   };
 
   const addPointAction = (action: string, points: number) => {
@@ -128,66 +182,51 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     ]);
   };
 
-  const login = async (email: string, password: string): Promise<boolean> => {
-    const savedUsers = JSON.parse(localStorage.getItem('iluminnados_users') || '[]');
-    const foundUser = savedUsers.find((u: any) => u.email === email && u.password === password);
-    
-    if (foundUser) {
-      const { password: _, ...userWithoutPassword } = foundUser;
-      const enhancedUser = {
-        ...userWithoutPassword,
-        points: userWithoutPassword.points || 0,
-        activeDays: userWithoutPassword.activeDays || [],
-        selfCareLogs: userWithoutPassword.selfCareLogs || [],
-        completedAnnualChallenges: userWithoutPassword.completedAnnualChallenges || [],
-        lastCheckIn: userWithoutPassword.lastCheckIn || null,
-      };
-      setUser(enhancedUser);
-      localStorage.setItem('iluminnados_user', JSON.stringify(enhancedUser));
-      return true;
+  const login = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      return { success: false, error: error.message };
     }
-    return false;
+    return { success: true };
   };
 
-  const signup = async (email: string, password: string, nickname: string, avatar: string): Promise<boolean> => {
-    const savedUsers = JSON.parse(localStorage.getItem('iluminnados_users') || '[]');
-    
-    if (savedUsers.some((u: any) => u.email === email)) {
-      return false;
-    }
+  const signup = async (email: string, password: string, nickname: string, avatar: string) => {
+    const redirectUrl = `${window.location.origin}/`;
+    const chosenAvatar = avatar || AVATARS[Math.floor(Math.random() * AVATARS.length)];
 
-    const isAdmin = email === 'admin@iluminnados.com';
-
-    const newUser: User & { password: string } = {
-      id: Date.now().toString(),
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      nickname,
-      avatar: avatar || AVATARS[Math.floor(Math.random() * AVATARS.length)],
-      progress: 0,
-      completedChallenges: [],
-      completedAnnualChallenges: [],
-      points: 0,
-      activeDays: [],
-      selfCareLogs: [],
-      lastCheckIn: null,
-      isAdmin,
-    };
+      options: {
+        emailRedirectTo: redirectUrl,
+        data: {
+          display_name: nickname,
+          avatar_url: chosenAvatar,
+        },
+      },
+    });
 
-    savedUsers.push(newUser);
-    localStorage.setItem('iluminnados_users', JSON.stringify(savedUsers));
-    
-    const { password: _, ...userWithoutPassword } = newUser;
-    setUser(userWithoutPassword);
-    localStorage.setItem('iluminnados_user', JSON.stringify(userWithoutPassword));
-    
-    return true;
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    // If user created but no session => email confirmation required
+    const needsConfirmation = !data.session;
+
+    // Patch the auto-created profile with avatar and nickname
+    if (data.user) {
+      await supabase
+        .from('profiles')
+        .update({ display_name: nickname, avatar_url: chosenAvatar })
+        .eq('user_id', data.user.id);
+    }
+
+    return { success: true, needsConfirmation };
   };
 
-  const logout = () => {
-    setUser(null);
+  const logout = async () => {
     setRecentPointActions([]);
-    localStorage.removeItem('iluminnados_user');
+    await supabase.auth.signOut();
   };
 
   const addPoints = (amount: number, action: string) => {
@@ -417,6 +456,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return (
     <AuthContext.Provider value={{ 
       user, 
+      session,
       isLoading, 
       login, 
       signup, 
