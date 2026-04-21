@@ -187,7 +187,7 @@ export default function Community() {
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">Online agora</span>
                   <span className="font-medium text-accent">
-                    {communityMembers.filter(m => m.status === 'online').length}
+                    {onlineCount}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
