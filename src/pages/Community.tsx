@@ -288,12 +288,12 @@ export default function Community() {
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">Em jornada</span>
                   <span className="font-medium text-primary">
-                    {communityMembers.filter(m => m.status === 'em jornada').length}
+                    {journeyCount}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">Total de membros</span>
-                  <span className="font-medium">{communityMembers.length}</span>
+                  <span className="font-medium">{members.length}</span>
                 </div>
               </div>
             </div>
