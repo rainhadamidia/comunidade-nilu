@@ -107,6 +107,131 @@ export type Database = {
         }
         Relationships: []
       }
+      stage_challenges: {
+        Row: {
+          action: string | null
+          created_at: string
+          description: string
+          id: string
+          points: number
+          position: number
+          reflection: string | null
+          stage_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          action?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          points?: number
+          position: number
+          reflection?: string | null
+          stage_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          action?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          points?: number
+          position?: number
+          reflection?: string | null
+          stage_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stage_challenges_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "stages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stages: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          position: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          position: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          position?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_challenge_progress: {
+        Row: {
+          available_at: string | null
+          challenge_id: string
+          completed_at: string | null
+          created_at: string
+          id: string
+          stage_id: string
+          unlocked_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          available_at?: string | null
+          challenge_id: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          stage_id: string
+          unlocked_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          available_at?: string | null
+          challenge_id?: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          stage_id?: string
+          unlocked_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_challenge_progress_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "stage_challenges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_challenge_progress_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "stages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -128,17 +253,63 @@ export type Database = {
         }
         Relationships: []
       }
+      user_stage_progress: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          id: string
+          stage_id: string
+          unlocked_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          stage_id: string
+          unlocked_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          stage_id?: string
+          unlocked_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_stage_progress_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "stages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      complete_user_challenge: {
+        Args: { _challenge_id: string }
+        Returns: Json
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
         Returns: boolean
+      }
+      initialize_user_progress: {
+        Args: { _user_id: string }
+        Returns: undefined
       }
     }
     Enums: {
