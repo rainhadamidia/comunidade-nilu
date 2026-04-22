@@ -109,7 +109,7 @@ export default function Challenges() {
 
       // Safety net: if user has no progress yet, initialize via RPC
       if ((spRes.data?.length ?? 0) === 0) {
-        await supabase.rpc('initialize_user_progress' as never, { _user_id: user.id } as never);
+        await supabase.rpc('initialize_user_progress', { _user_id: user.id });
         const [cp2, sp2] = await Promise.all([
           supabase.from('user_challenge_progress').select('*').eq('user_id', user.id),
           supabase.from('user_stage_progress').select('*').eq('user_id', user.id),
@@ -167,10 +167,9 @@ export default function Challenges() {
     }
     setSubmitting(true);
     try {
-      const { data, error } = await supabase.rpc(
-        'complete_user_challenge' as never,
-        { _challenge_id: selectedChallenge.id } as never,
-      );
+      const { data, error } = await supabase.rpc('complete_user_challenge', {
+        _challenge_id: selectedChallenge.id,
+      });
       if (error) throw error;
 
       addPoints(selectedChallenge.points, `Desafio: ${selectedChallenge.title}`);
