@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      conteudos: {
+        Row: {
+          category: Database["public"]["Enums"]["content_category"]
+          created_at: string
+          description: string
+          how_it_helped: string | null
+          id: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category: Database["public"]["Enums"]["content_category"]
+          created_at?: string
+          description: string
+          how_it_helped?: string | null
+          id?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["content_category"]
+          created_at?: string
+          description?: string
+          how_it_helped?: string | null
+          id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       posts: {
         Row: {
           content: string
@@ -110,6 +143,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
+      content_category: "book" | "movie" | "meditation" | "music" | "community"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -238,6 +272,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
+      content_category: ["book", "movie", "meditation", "music", "community"],
     },
   },
 } as const
