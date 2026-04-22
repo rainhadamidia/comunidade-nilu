@@ -1,17 +1,84 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Layout } from '@/components/Layout';
-import { communityMembers, activities } from '@/lib/mockData';
+import { activities } from '@/lib/mockData';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
-import { Users, Heart, Hand, Circle, Sparkles, Wifi } from 'lucide-react';
+import { Users, Heart, Hand, Circle, Sparkles, Wifi, Loader2 } from 'lucide-react';
 import { usePresence } from '@/hooks/usePresence';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+
+interface MemberProfile {
+  user_id: string;
+  display_name: string;
+  avatar_url: string | null;
+  points: number;
+  updated_at: string;
+}
+
+type MemberStatus = 'online' | 'em jornada' | 'offline';
+
+// "Em jornada" = ativo nas últimas 24h mas não está online agora
+const JOURNEY_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 export default function Community() {
   const { user } = useAuth();
   const { onlineUsers, onlineCount } = usePresence();
+  const [members, setMembers] = useState<MemberProfile[]>([]);
+  const [loading, setLoading] = useState(true);
   const [waved, setWaved] = useState<string[]>([]);
   const [liked, setLiked] = useState<string[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('user_id, display_name, avatar_url, points, updated_at')
+        .order('points', { ascending: false });
+
+      if (cancelled) return;
+      if (error) {
+        toast({
+          title: 'Erro ao carregar membros',
+          description: error.message,
+          variant: 'destructive',
+        });
+      } else {
+        setMembers((data ?? []) as MemberProfile[]);
+      }
+      setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const onlineIds = useMemo(
+    () => new Set(onlineUsers.map((u) => u.user_id)),
+    [onlineUsers],
+  );
+
+  const getMemberStatus = (m: MemberProfile): MemberStatus => {
+    if (onlineIds.has(m.user_id)) return 'online';
+    const updated = new Date(m.updated_at).getTime();
+    if (Date.now() - updated < JOURNEY_WINDOW_MS) return 'em jornada';
+    return 'offline';
+  };
+
+  const sortedMembers = useMemo(() => {
+    const order: Record<MemberStatus, number> = { online: 0, 'em jornada': 1, offline: 2 };
+    return [...members].sort(
+      (a, b) => order[getMemberStatus(a)] - order[getMemberStatus(b)],
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [members, onlineIds]);
+
+  const journeyCount = useMemo(
+    () => members.filter((m) => getMemberStatus(m) === 'em jornada').length,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [members, onlineIds],
+  );
 
   const handleWave = (memberId: string, nickname: string) => {
     if (waved.includes(memberId)) return;
@@ -31,7 +98,7 @@ export default function Community() {
     });
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: MemberStatus) => {
     switch (status) {
       case 'online': return 'text-accent';
       case 'em jornada': return 'text-primary';
