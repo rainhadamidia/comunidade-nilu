@@ -164,53 +164,81 @@ export default function Community() {
           <div className="lg:col-span-2 space-y-4">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Users className="w-4 h-4" />
-              <span>{communityMembers.length} membros na praça</span>
+              <span>{members.length} membros na praça</span>
             </div>
 
-            <div className="grid sm:grid-cols-2 gap-4">
-              {communityMembers.map((member) => (
-                <div 
-                  key={member.id}
-                  className="glass-card p-5 hover:border-secondary/50 transition-all"
-                >
-                  <div className="flex items-start gap-4">
-                    <div className="text-4xl">{member.avatar}</div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold truncate">{member.nickname}</h3>
-                      <div className="flex items-center gap-1.5 mt-1">
-                        <Circle className={`w-2 h-2 fill-current ${getStatusColor(member.status)}`} />
-                        <span className={`text-sm ${getStatusColor(member.status)}`}>
-                          {member.status}
-                        </span>
+            {loading ? (
+              <div className="flex items-center justify-center py-12 text-muted-foreground">
+                <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                Carregando membros...
+              </div>
+            ) : members.length === 0 ? (
+              <div className="glass-card p-8 text-center text-muted-foreground">
+                Ainda não há membros na praça.
+              </div>
+            ) : (
+              <div className="grid sm:grid-cols-2 gap-4">
+                {sortedMembers.map((member) => {
+                  const status = getMemberStatus(member);
+                  const isSelf = member.user_id === user?.id;
+                  const displayName = isSelf
+                    ? `${member.display_name} (você)`
+                    : member.display_name;
+                  return (
+                    <div
+                      key={member.user_id}
+                      className="glass-card p-5 hover:border-secondary/50 transition-all"
+                    >
+                      <div className="flex items-start gap-4">
+                        <div className="text-4xl relative">
+                          {member.avatar_url || '✨'}
+                          {status === 'online' && (
+                            <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-accent rounded-full ring-2 ring-background animate-pulse" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold truncate">{displayName}</h3>
+                          <div className="flex items-center gap-1.5 mt-1">
+                            <Circle className={`w-2 h-2 fill-current ${getStatusColor(status)}`} />
+                            <span className={`text-sm capitalize ${getStatusColor(status)}`}>
+                              {status}
+                            </span>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {member.points} pts
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  </div>
 
-                  <div className="flex gap-2 mt-4">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleWave(member.id, member.nickname)}
-                      disabled={waved.includes(member.id)}
-                      className={`flex-1 ${waved.includes(member.id) ? 'border-primary/50 text-primary' : ''}`}
-                    >
-                      <Hand className="w-4 h-4 mr-1.5" />
-                      {waved.includes(member.id) ? 'Acenou' : 'Acenar'}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleLike(member.id, member.nickname)}
-                      disabled={liked.includes(member.id)}
-                      className={`flex-1 ${liked.includes(member.id) ? 'border-secondary/50 text-secondary' : ''}`}
-                    >
-                      <Heart className={`w-4 h-4 mr-1.5 ${liked.includes(member.id) ? 'fill-secondary' : ''}`} />
-                      {liked.includes(member.id) ? 'Curtiu' : 'Curtir'}
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
+                      {!isSelf && (
+                        <div className="flex gap-2 mt-4">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleWave(member.user_id, member.display_name)}
+                            disabled={waved.includes(member.user_id)}
+                            className={`flex-1 ${waved.includes(member.user_id) ? 'border-primary/50 text-primary' : ''}`}
+                          >
+                            <Hand className="w-4 h-4 mr-1.5" />
+                            {waved.includes(member.user_id) ? 'Acenou' : 'Acenar'}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleLike(member.user_id, member.display_name)}
+                            disabled={liked.includes(member.user_id)}
+                            className={`flex-1 ${liked.includes(member.user_id) ? 'border-secondary/50 text-secondary' : ''}`}
+                          >
+                            <Heart className={`w-4 h-4 mr-1.5 ${liked.includes(member.user_id) ? 'fill-secondary' : ''}`} />
+                            {liked.includes(member.user_id) ? 'Curtiu' : 'Curtir'}
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* Activity Feed */}
