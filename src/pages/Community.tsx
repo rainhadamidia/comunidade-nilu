@@ -1,17 +1,84 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Layout } from '@/components/Layout';
-import { communityMembers, activities } from '@/lib/mockData';
+import { activities } from '@/lib/mockData';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
-import { Users, Heart, Hand, Circle, Sparkles, Wifi } from 'lucide-react';
+import { Users, Heart, Hand, Circle, Sparkles, Wifi, Loader2 } from 'lucide-react';
 import { usePresence } from '@/hooks/usePresence';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+
+interface MemberProfile {
+  user_id: string;
+  display_name: string;
+  avatar_url: string | null;
+  points: number;
+  updated_at: string;
+}
+
+type MemberStatus = 'online' | 'em jornada' | 'offline';
+
+// "Em jornada" = ativo nas últimas 24h mas não está online agora
+const JOURNEY_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 export default function Community() {
   const { user } = useAuth();
   const { onlineUsers, onlineCount } = usePresence();
+  const [members, setMembers] = useState<MemberProfile[]>([]);
+  const [loading, setLoading] = useState(true);
   const [waved, setWaved] = useState<string[]>([]);
   const [liked, setLiked] = useState<string[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('user_id, display_name, avatar_url, points, updated_at')
+        .order('points', { ascending: false });
+
+      if (cancelled) return;
+      if (error) {
+        toast({
+          title: 'Erro ao carregar membros',
+          description: error.message,
+          variant: 'destructive',
+        });
+      } else {
+        setMembers((data ?? []) as MemberProfile[]);
+      }
+      setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const onlineIds = useMemo(
+    () => new Set(onlineUsers.map((u) => u.user_id)),
+    [onlineUsers],
+  );
+
+  const getMemberStatus = (m: MemberProfile): MemberStatus => {
+    if (onlineIds.has(m.user_id)) return 'online';
+    const updated = new Date(m.updated_at).getTime();
+    if (Date.now() - updated < JOURNEY_WINDOW_MS) return 'em jornada';
+    return 'offline';
+  };
+
+  const sortedMembers = useMemo(() => {
+    const order: Record<MemberStatus, number> = { online: 0, 'em jornada': 1, offline: 2 };
+    return [...members].sort(
+      (a, b) => order[getMemberStatus(a)] - order[getMemberStatus(b)],
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [members, onlineIds]);
+
+  const journeyCount = useMemo(
+    () => members.filter((m) => getMemberStatus(m) === 'em jornada').length,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [members, onlineIds],
+  );
 
   const handleWave = (memberId: string, nickname: string) => {
     if (waved.includes(memberId)) return;
@@ -31,7 +98,7 @@ export default function Community() {
     });
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: MemberStatus) => {
     switch (status) {
       case 'online': return 'text-accent';
       case 'em jornada': return 'text-primary';
@@ -97,53 +164,81 @@ export default function Community() {
           <div className="lg:col-span-2 space-y-4">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Users className="w-4 h-4" />
-              <span>{communityMembers.length} membros na praça</span>
+              <span>{members.length} membros na praça</span>
             </div>
 
-            <div className="grid sm:grid-cols-2 gap-4">
-              {communityMembers.map((member) => (
-                <div 
-                  key={member.id}
-                  className="glass-card p-5 hover:border-secondary/50 transition-all"
-                >
-                  <div className="flex items-start gap-4">
-                    <div className="text-4xl">{member.avatar}</div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold truncate">{member.nickname}</h3>
-                      <div className="flex items-center gap-1.5 mt-1">
-                        <Circle className={`w-2 h-2 fill-current ${getStatusColor(member.status)}`} />
-                        <span className={`text-sm ${getStatusColor(member.status)}`}>
-                          {member.status}
-                        </span>
+            {loading ? (
+              <div className="flex items-center justify-center py-12 text-muted-foreground">
+                <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                Carregando membros...
+              </div>
+            ) : members.length === 0 ? (
+              <div className="glass-card p-8 text-center text-muted-foreground">
+                Ainda não há membros na praça.
+              </div>
+            ) : (
+              <div className="grid sm:grid-cols-2 gap-4">
+                {sortedMembers.map((member) => {
+                  const status = getMemberStatus(member);
+                  const isSelf = member.user_id === user?.id;
+                  const displayName = isSelf
+                    ? `${member.display_name} (você)`
+                    : member.display_name;
+                  return (
+                    <div
+                      key={member.user_id}
+                      className="glass-card p-5 hover:border-secondary/50 transition-all"
+                    >
+                      <div className="flex items-start gap-4">
+                        <div className="text-4xl relative">
+                          {member.avatar_url || '✨'}
+                          {status === 'online' && (
+                            <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-accent rounded-full ring-2 ring-background animate-pulse" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold truncate">{displayName}</h3>
+                          <div className="flex items-center gap-1.5 mt-1">
+                            <Circle className={`w-2 h-2 fill-current ${getStatusColor(status)}`} />
+                            <span className={`text-sm capitalize ${getStatusColor(status)}`}>
+                              {status}
+                            </span>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {member.points} pts
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  </div>
 
-                  <div className="flex gap-2 mt-4">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleWave(member.id, member.nickname)}
-                      disabled={waved.includes(member.id)}
-                      className={`flex-1 ${waved.includes(member.id) ? 'border-primary/50 text-primary' : ''}`}
-                    >
-                      <Hand className="w-4 h-4 mr-1.5" />
-                      {waved.includes(member.id) ? 'Acenou' : 'Acenar'}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleLike(member.id, member.nickname)}
-                      disabled={liked.includes(member.id)}
-                      className={`flex-1 ${liked.includes(member.id) ? 'border-secondary/50 text-secondary' : ''}`}
-                    >
-                      <Heart className={`w-4 h-4 mr-1.5 ${liked.includes(member.id) ? 'fill-secondary' : ''}`} />
-                      {liked.includes(member.id) ? 'Curtiu' : 'Curtir'}
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
+                      {!isSelf && (
+                        <div className="flex gap-2 mt-4">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleWave(member.user_id, member.display_name)}
+                            disabled={waved.includes(member.user_id)}
+                            className={`flex-1 ${waved.includes(member.user_id) ? 'border-primary/50 text-primary' : ''}`}
+                          >
+                            <Hand className="w-4 h-4 mr-1.5" />
+                            {waved.includes(member.user_id) ? 'Acenou' : 'Acenar'}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleLike(member.user_id, member.display_name)}
+                            disabled={liked.includes(member.user_id)}
+                            className={`flex-1 ${liked.includes(member.user_id) ? 'border-secondary/50 text-secondary' : ''}`}
+                          >
+                            <Heart className={`w-4 h-4 mr-1.5 ${liked.includes(member.user_id) ? 'fill-secondary' : ''}`} />
+                            {liked.includes(member.user_id) ? 'Curtiu' : 'Curtir'}
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* Activity Feed */}
@@ -193,12 +288,12 @@ export default function Community() {
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">Em jornada</span>
                   <span className="font-medium text-primary">
-                    {communityMembers.filter(m => m.status === 'em jornada').length}
+                    {journeyCount}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">Total de membros</span>
-                  <span className="font-medium">{communityMembers.length}</span>
+                  <span className="font-medium">{members.length}</span>
                 </div>
               </div>
             </div>
