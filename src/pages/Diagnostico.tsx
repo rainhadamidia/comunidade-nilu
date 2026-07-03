@@ -141,7 +141,7 @@ export default function Diagnostico() {
         )}
 
         {etapa === 'resultado' && relatorio && (
-          <ResultadoPCI relatorio={relatorio} onContinuar={() => navigate('/')} />
+          <ResultadoPCI relatorio={relatorio} onContinuar={() => navigate('/novo-projeto')} />
         )}
       </div>
     </div>

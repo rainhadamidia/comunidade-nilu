@@ -140,6 +140,159 @@ export type Database = {
         }
         Relationships: []
       }
+      psi_checkins: {
+        Row: {
+          created_at: string
+          dificuldades: string | null
+          executou: string
+          id: string
+          produtividade: number | null
+          task_id: string
+          tempo_usado_min: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          dificuldades?: string | null
+          executou: string
+          id?: string
+          produtividade?: number | null
+          task_id: string
+          tempo_usado_min?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          dificuldades?: string | null
+          executou?: string
+          id?: string
+          produtividade?: number | null
+          task_id?: string
+          tempo_usado_min?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      psi_projects: {
+        Row: {
+          categoria: string | null
+          created_at: string
+          descricao: string | null
+          id: string
+          nome: string
+          objetivo: string
+          pci_result_id: string | null
+          prazo_dias: number
+          prioridade: Database["public"]["Enums"]["psi_prioridade"]
+          status: Database["public"]["Enums"]["psi_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          categoria?: string | null
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome: string
+          objetivo: string
+          pci_result_id?: string | null
+          prazo_dias?: number
+          prioridade?: Database["public"]["Enums"]["psi_prioridade"]
+          status?: Database["public"]["Enums"]["psi_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          categoria?: string | null
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome?: string
+          objetivo?: string
+          pci_result_id?: string | null
+          prazo_dias?: number
+          prioridade?: Database["public"]["Enums"]["psi_prioridade"]
+          status?: Database["public"]["Enums"]["psi_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      psi_tasks: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          descricao: string
+          dificuldade: Database["public"]["Enums"]["psi_task_dificuldade"]
+          id: string
+          objetivo: string | null
+          ordem: number
+          status: Database["public"]["Enums"]["psi_task_status"]
+          tempo_estimado_min: number
+          titulo: string
+          week_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          descricao: string
+          dificuldade?: Database["public"]["Enums"]["psi_task_dificuldade"]
+          id?: string
+          objetivo?: string | null
+          ordem: number
+          status?: Database["public"]["Enums"]["psi_task_status"]
+          tempo_estimado_min?: number
+          titulo: string
+          week_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          descricao?: string
+          dificuldade?: Database["public"]["Enums"]["psi_task_dificuldade"]
+          id?: string
+          objetivo?: string | null
+          ordem?: number
+          status?: Database["public"]["Enums"]["psi_task_status"]
+          tempo_estimado_min?: number
+          titulo?: string
+          week_id?: string
+        }
+        Relationships: []
+      }
+      psi_weeks: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          id: string
+          numero: number
+          project_id: string
+          status: Database["public"]["Enums"]["psi_week_status"]
+          titulo: string
+          unlocked_at: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          numero: number
+          project_id: string
+          status?: Database["public"]["Enums"]["psi_week_status"]
+          titulo: string
+          unlocked_at?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          numero?: number
+          project_id?: string
+          status?: Database["public"]["Enums"]["psi_week_status"]
+          titulo?: string
+          unlocked_at?: string | null
+        }
+        Relationships: []
+      }
       stage_challenges: {
         Row: {
           action: string | null
@@ -348,6 +501,11 @@ export type Database = {
     Enums: {
       app_role: "admin" | "moderator" | "user"
       content_category: "book" | "movie" | "meditation" | "music" | "community"
+      psi_prioridade: "baixa" | "media" | "alta"
+      psi_status: "active" | "completed" | "abandoned"
+      psi_task_dificuldade: "facil" | "media" | "dificil"
+      psi_task_status: "pending" | "in_progress" | "paused" | "completed"
+      psi_week_status: "locked" | "active" | "completed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -477,6 +635,11 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "moderator", "user"],
       content_category: ["book", "movie", "meditation", "music", "community"],
+      psi_prioridade: ["baixa", "media", "alta"],
+      psi_status: ["active", "completed", "abandoned"],
+      psi_task_dificuldade: ["facil", "media", "dificil"],
+      psi_task_status: ["pending", "in_progress", "paused", "completed"],
+      psi_week_status: ["locked", "active", "completed"],
     },
   },
 } as const

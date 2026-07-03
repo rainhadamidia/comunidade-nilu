@@ -15,7 +15,8 @@ import {
   Calendar,
   Shield,
   MessageCircle,
-  Trophy
+  Trophy,
+  Target
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
@@ -28,6 +29,7 @@ interface LayoutProps {
 
 const navItems = [
   { icon: Home, label: 'Home', path: '/' },
+  { icon: Target, label: 'Meu Projeto', path: '/meu-projeto' },
   { icon: MessageCircle, label: 'Feed', path: '/feed' },
   { icon: Trophy, label: 'Ranking', path: '/ranking' },
   { icon: Map, label: 'Mapa de Desafios', path: '/challenges' },

@@ -26,10 +26,23 @@ const Index = () => {
       .select('id')
       .eq('user_id', user.id)
       .limit(1)
-      .then(({ data }) => {
+      .then(async ({ data: pciData }) => {
         if (!ativo) return;
-        if (!data || data.length === 0) {
+        if (!pciData || pciData.length === 0) {
           navigate('/diagnostico');
+          return;
+        }
+
+        const { data: psiData } = await supabase
+          .from('psi_projects')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('status', 'active')
+          .limit(1);
+
+        if (!ativo) return;
+        if (!psiData || psiData.length === 0) {
+          navigate('/novo-projeto');
         } else {
           setCheckandoPci(false);
         }
