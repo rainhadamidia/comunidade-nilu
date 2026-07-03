@@ -47,6 +47,39 @@ export type Database = {
         }
         Relationships: []
       }
+      pci_results: {
+        Row: {
+          created_at: string
+          dominante: string
+          id: string
+          respostas: Json
+          scores: Json
+          secundario: string
+          terciario: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          dominante: string
+          id?: string
+          respostas: Json
+          scores: Json
+          secundario: string
+          terciario: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          dominante?: string
+          id?: string
+          respostas?: Json
+          scores?: Json
+          secundario?: string
+          terciario?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       posts: {
         Row: {
           content: string
