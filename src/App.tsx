@@ -8,6 +8,7 @@ import { PresenceProvider } from "@/hooks/usePresence";
 import { PointsToast } from "@/components/PointsToast";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
+import Diagnostico from "./pages/Diagnostico";
 import Challenges from "./pages/Challenges";
 import Community from "./pages/Community";
 import SafeSpace from "./pages/SafeSpace";
@@ -35,6 +36,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/diagnostico" element={<Diagnostico />} />
             <Route path="/challenges" element={<Challenges />} />
             <Route path="/annual-challenges" element={<AnnualChallenges />} />
             <Route path="/community" element={<Community />} />
