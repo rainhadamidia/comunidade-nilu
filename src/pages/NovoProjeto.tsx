@@ -46,7 +46,8 @@ export default function NovoProjeto() {
       const { count } = await supabase
         .from('psi_projects')
         .select('id', { count: 'exact', head: true })
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .eq('status', 'active');
 
       setLimiteAtingido((count ?? 0) >= 1);
       setVerificandoLimite(false);
