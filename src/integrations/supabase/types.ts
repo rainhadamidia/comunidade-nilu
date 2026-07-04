@@ -114,6 +114,7 @@ export type Database = {
           display_name: string
           email: string
           id: string
+          plan: Database["public"]["Enums"]["user_plan"]
           points: number
           updated_at: string
           user_id: string
@@ -124,6 +125,7 @@ export type Database = {
           display_name: string
           email: string
           id?: string
+          plan?: Database["public"]["Enums"]["user_plan"]
           points?: number
           updated_at?: string
           user_id: string
@@ -134,6 +136,7 @@ export type Database = {
           display_name?: string
           email?: string
           id?: string
+          plan?: Database["public"]["Enums"]["user_plan"]
           points?: number
           updated_at?: string
           user_id?: string
@@ -482,6 +485,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      award_points: {
+        Args: { _amount: number; _user_id: string }
+        Returns: number
+      }
       complete_user_challenge: {
         Args: { _challenge_id: string }
         Returns: Json
@@ -506,6 +513,7 @@ export type Database = {
       psi_task_dificuldade: "facil" | "media" | "dificil"
       psi_task_status: "pending" | "in_progress" | "paused" | "completed"
       psi_week_status: "locked" | "active" | "completed"
+      user_plan: "free" | "premium"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -640,6 +648,7 @@ export const Constants = {
       psi_task_dificuldade: ["facil", "media", "dificil"],
       psi_task_status: ["pending", "in_progress", "paused", "completed"],
       psi_week_status: ["locked", "active", "completed"],
+      user_plan: ["free", "premium"],
     },
   },
 } as const

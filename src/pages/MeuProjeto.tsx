@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
 import { Lock, CheckCircle2, Circle, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { awardPoints, pontosPorDificuldade, NEURAL_COINS } from '@/lib/points';
 
 interface Task {
   id: string;
@@ -120,6 +121,8 @@ export default function MeuProjeto() {
       .update({ status: 'completed', completed_at: new Date().toISOString() })
       .eq('id', task.id);
 
+    await awardPoints(user.id, pontosPorDificuldade(task.dificuldade));
+
     const tarefasDaSemana = tasksByWeek[week.id] ?? [];
     const todasConcluidas = tarefasDaSemana.every(t => t.id === task.id || t.status === 'completed');
 
@@ -129,21 +132,24 @@ export default function MeuProjeto() {
         .update({ status: 'completed', completed_at: new Date().toISOString() })
         .eq('id', week.id);
 
+      await awardPoints(user.id, NEURAL_COINS.SEMANA_CONCLUIDA);
+
       const proximaSemana = weeks.find(w => w.numero === week.numero + 1);
       if (proximaSemana) {
         await supabase
           .from('psi_weeks')
           .update({ status: 'active', unlocked_at: new Date().toISOString() })
           .eq('id', proximaSemana.id);
-        toast({ title: `Semana ${week.numero} concluída! 🎉`, description: `Semana ${proximaSemana.numero} liberada.` });
+        toast({ title: `Semana ${week.numero} concluída! 🎉`, description: `Semana ${proximaSemana.numero} liberada. +${NEURAL_COINS.SEMANA_CONCLUIDA} Neural Coins` });
       } else {
-        toast({ title: 'Projeto concluído! 🏆', description: 'Você chegou ao fim das 4 semanas.' });
+        await awardPoints(user.id, NEURAL_COINS.PROJETO_CONCLUIDO);
+        toast({ title: 'Projeto concluído! 🏆', description: `Você chegou ao fim das 4 semanas. +${NEURAL_COINS.PROJETO_CONCLUIDO} Neural Coins` });
         if (project) {
           await supabase.from('psi_projects').update({ status: 'completed' }).eq('id', project.id);
         }
       }
     } else {
-      toast({ title: 'Tarefa concluída!' });
+      toast({ title: 'Tarefa concluída!', description: `+${pontosPorDificuldade(task.dificuldade)} Neural Coins` });
     }
 
     setCheckinAberto(null);

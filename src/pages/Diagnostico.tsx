@@ -8,6 +8,7 @@ import { toast } from '@/hooks/use-toast';
 import { ArrowRight, ArrowLeft } from 'lucide-react';
 import { PERGUNTAS, ESCALA, PERFIS, type TraitId } from '@/lib/pci/content';
 import { calcularScores, gerarRelatorio, type Respostas, type RelatorioPCI } from '@/lib/pci/engine';
+import { awardPoints, NEURAL_COINS } from '@/lib/points';
 
 type Etapa = 'intro' | 'quiz' | 'resultado';
 
@@ -49,6 +50,7 @@ export default function Diagnostico() {
           terciario: rel.terciario,
         });
         if (error) throw error;
+        await awardPoints(user.id, NEURAL_COINS.PCI_CONCLUIDO);
       }
 
       setEtapa('resultado');

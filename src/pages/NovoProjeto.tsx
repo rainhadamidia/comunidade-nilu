@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,9 +8,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Lock } from 'lucide-react';
 import type { TraitId } from '@/lib/pci/content';
 import { gerarPlanoPSI } from '@/lib/psi/taskTemplates';
+import { awardPoints, NEURAL_COINS } from '@/lib/points';
 
 const CATEGORIAS = ['Negócio', 'Carreira', 'Financeiro', 'Relacionamento', 'Saúde', 'Pessoal', 'Outro'];
 
@@ -24,6 +25,35 @@ export default function NovoProjeto() {
   const [prioridade, setPrioridade] = useState('media');
   const [categoria, setCategoria] = useState('Negócio');
   const [salvando, setSalvando] = useState(false);
+  const [verificandoLimite, setVerificandoLimite] = useState(true);
+  const [limiteAtingido, setLimiteAtingido] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const verificarLimite = async () => {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('plan')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (profile?.plan === 'premium') {
+        setVerificandoLimite(false);
+        return;
+      }
+
+      const { count } = await supabase
+        .from('psi_projects')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+
+      setLimiteAtingido((count ?? 0) >= 1);
+      setVerificandoLimite(false);
+    };
+
+    verificarLimite();
+  }, [user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,6 +124,8 @@ export default function NovoProjeto() {
         if (tasksError) throw tasksError;
       }
 
+      await awardPoints(user.id, NEURAL_COINS.PSI_CADASTRADO);
+
       toast({ title: 'Projeto criado!', description: 'Sua jornada de 4 semanas já está pronta.' });
       navigate('/');
     } catch (err) {
@@ -103,6 +135,45 @@ export default function NovoProjeto() {
       setSalvando(false);
     }
   };
+
+  if (verificandoLimite) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <p className="text-muted-foreground">Carregando...</p>
+      </div>
+    );
+  }
+
+  if (limiteAtingido) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-secondary/10 rounded-full blur-3xl" />
+        </div>
+        <div className="w-full max-w-md relative z-10">
+          <div className="glass-card p-8 text-center space-y-4">
+            <Lock className="w-12 h-12 mx-auto text-primary" />
+            <h1 className="text-2xl font-bold neon-text">Recurso Premium</h1>
+            <p className="text-muted-foreground">
+              No plano gratuito você pode ter 1 projeto (PSI) por vez. Para cadastrar mais
+              projetos simultâneos, desbloqueie o plano Premium.
+            </p>
+            <Button
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground neon-glow"
+              onClick={() => navigate('/premium')}
+            >
+              Ver planos Premium
+              <ArrowRight className="w-5 h-5 ml-2" />
+            </Button>
+            <Button variant="ghost" className="w-full" onClick={() => navigate('/')}>
+              Voltar para o Início
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">

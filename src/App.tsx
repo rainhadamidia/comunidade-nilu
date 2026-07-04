@@ -11,6 +11,7 @@ import Auth from "./pages/Auth";
 import Diagnostico from "./pages/Diagnostico";
 import NovoProjeto from "./pages/NovoProjeto";
 import MeuProjeto from "./pages/MeuProjeto";
+import Premium from "./pages/Premium";
 import Challenges from "./pages/Challenges";
 import Community from "./pages/Community";
 import SafeSpace from "./pages/SafeSpace";
@@ -41,6 +42,7 @@ const App = () => (
             <Route path="/diagnostico" element={<Diagnostico />} />
             <Route path="/novo-projeto" element={<NovoProjeto />} />
             <Route path="/meu-projeto" element={<MeuProjeto />} />
+            <Route path="/premium" element={<Premium />} />
             <Route path="/challenges" element={<Challenges />} />
             <Route path="/annual-challenges" element={<AnnualChallenges />} />
             <Route path="/community" element={<Community />} />
