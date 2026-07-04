@@ -80,6 +80,30 @@ export type Database = {
         }
         Relationships: []
       }
+      personality_notes: {
+        Row: {
+          created_at: string
+          id: string
+          personality_id: string
+          relato: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          personality_id: string
+          relato: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          personality_id?: string
+          relato?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       posts: {
         Row: {
           content: string
