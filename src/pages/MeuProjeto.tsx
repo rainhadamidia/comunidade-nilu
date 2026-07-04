@@ -116,6 +116,13 @@ export default function MeuProjeto() {
       return;
     }
 
+    if (executou === 'nao') {
+      toast({ title: 'Sem problema!', description: 'A tarefa continua disponível — retome quando puder.' });
+      setCheckinAberto(null);
+      carregarProjeto();
+      return;
+    }
+
     await supabase
       .from('psi_tasks')
       .update({ status: 'completed', completed_at: new Date().toISOString() })
@@ -184,6 +191,11 @@ export default function MeuProjeto() {
               <div className="flex items-center gap-3 mb-4">
                 {isLocked ? <Lock className="w-5 h-5 text-muted-foreground" /> : isCompleted ? <CheckCircle2 className="w-5 h-5 text-accent" /> : <Circle className="w-5 h-5 text-primary" />}
                 <h2 className="text-xl font-semibold">Semana {week.numero} — {week.titulo}</h2>
+                {!isLocked && tarefas.length > 0 && (
+                  <span className="text-sm text-muted-foreground ml-auto">
+                    {tarefas.filter(t => t.status === 'completed').length}/{tarefas.length} tarefas
+                  </span>
+                )}
               </div>
 
               {!isLocked && (
@@ -217,7 +229,7 @@ export default function MeuProjeto() {
 
                       {checkinAberto === task.id && (
                         <div className="mt-4 pt-4 border-t border-border/50 space-y-3">
-                          <p className="text-sm font-medium">Como foi executar essa tarefa?</p>
+                          <p className="text-sm font-medium">Você conseguiu executar essa tarefa?</p>
                           <div className="flex gap-2">
                             {(['sim', 'parcial', 'nao'] as const).map((opcao) => (
                               <button
