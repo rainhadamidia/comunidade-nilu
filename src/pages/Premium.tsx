@@ -1,6 +1,8 @@
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Sparkles, Infinity as InfinityIcon, Brain, Users, BarChart3 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Sparkles, Infinity as InfinityIcon, Brain, Users, BarChart3 } from 'lucide-react';
+
+const LINK_ASSINATURA = 'https://invoice.infinitepay.io/plans/rainhadamidia-ia/x4KWrEaqAW';
 
 const BENEFICIOS = [
   { icon: InfinityIcon, texto: 'Projetos (PSI) ilimitados, simultâneos' },
@@ -39,9 +41,16 @@ export default function Premium() {
             ))}
           </div>
 
+          <a href={LINK_ASSINATURA} target="_blank" rel="noopener noreferrer" className="block">
+            <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground neon-glow">
+              Assinar Premium
+              <ArrowRight className="w-5 h-5 ml-2" />
+            </Button>
+          </a>
+
           <div className="bg-primary/10 border border-primary/30 rounded-lg p-4 text-center">
             <p className="text-sm text-muted-foreground">
-              Página de assinatura em construção — em breve você poderá assinar direto por aqui.
+              Após confirmar o pagamento, seu acesso Premium é liberado manualmente em até algumas horas.
             </p>
           </div>
 
