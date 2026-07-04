@@ -1,19 +1,124 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import { toast } from '@/hooks/use-toast';
 import { challenges } from '@/lib/mockData';
 import { annualChallenges } from '@/lib/annualChallenges';
-import { 
-  Users, 
-  TrendingUp, 
-  Target, 
+import {
+  Users,
+  TrendingUp,
+  Target,
   Activity,
   UserCheck,
   UserX,
   Award,
-  Calendar
+  Calendar,
+  Crown
 } from 'lucide-react';
+
+interface ProfileRow {
+  user_id: string;
+  display_name: string;
+  email: string;
+  points: number;
+  plan: 'free' | 'premium';
+}
+
+function PremiumManager() {
+  const [profiles, setProfiles] = useState<ProfileRow[]>([]);
+  const [carregando, setCarregando] = useState(true);
+  const [atualizando, setAtualizando] = useState<string | null>(null);
+
+  const carregar = async () => {
+    setCarregando(true);
+    const { data } = await supabase
+      .from('profiles')
+      .select('user_id, display_name, email, points, plan')
+      .order('created_at', { ascending: false });
+    setProfiles((data as ProfileRow[]) ?? []);
+    setCarregando(false);
+  };
+
+  useEffect(() => {
+    carregar();
+  }, []);
+
+  const alternarPlano = async (userId: string, planoAtual: 'free' | 'premium') => {
+    setAtualizando(userId);
+    const novoPlano = planoAtual === 'premium' ? 'free' : 'premium';
+    const { error } = await supabase
+      .from('profiles')
+      .update({ plan: novoPlano })
+      .eq('user_id', userId);
+
+    if (error) {
+      toast({ title: 'Erro ao atualizar plano', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: novoPlano === 'premium' ? 'Usuário promovido a Premium! 👑' : 'Usuário voltou para o plano grátis' });
+      await carregar();
+    }
+    setAtualizando(null);
+  };
+
+  return (
+    <div className="glass-card p-6">
+      <div className="flex items-center gap-3 mb-6">
+        <Crown className="w-6 h-6 text-primary" />
+        <h2 className="text-xl font-semibold">Gestão de Assinaturas Premium</h2>
+      </div>
+      <p className="text-sm text-muted-foreground mb-4">
+        Depois de confirmar o pagamento no painel da InfinitePay, promova o usuário aqui.
+      </p>
+
+      {carregando ? (
+        <p className="text-muted-foreground">Carregando usuários...</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-border">
+                <th className="text-left py-3 px-4 text-muted-foreground font-medium">Usuário</th>
+                <th className="text-center py-3 px-4 text-muted-foreground font-medium">Plano</th>
+                <th className="text-center py-3 px-4 text-muted-foreground font-medium">Ação</th>
+              </tr>
+            </thead>
+            <tbody>
+              {profiles.map((p) => (
+                <tr key={p.user_id} className="border-b border-border/50 hover:bg-muted/20">
+                  <td className="py-3 px-4">
+                    <p className="font-medium">{p.display_name}</p>
+                    <p className="text-xs text-muted-foreground">{p.email}</p>
+                  </td>
+                  <td className="py-3 px-4 text-center">
+                    <span className={p.plan === 'premium' ? 'text-primary font-bold' : 'text-muted-foreground'}>
+                      {p.plan === 'premium' ? '👑 Premium' : 'Grátis'}
+                    </span>
+                  </td>
+                  <td className="py-3 px-4 text-center">
+                    <Button
+                      size="sm"
+                      variant={p.plan === 'premium' ? 'outline' : 'default'}
+                      disabled={atualizando === p.user_id}
+                      onClick={() => alternarPlano(p.user_id, p.plan)}
+                    >
+                      {p.plan === 'premium' ? 'Voltar para Grátis' : 'Tornar Premium'}
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {profiles.length === 0 && (
+            <div className="text-center py-8 text-muted-foreground">Nenhum usuário cadastrado ainda.</div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function Admin() {
   const { user, getAllUsers } = useAuth();
@@ -85,6 +190,8 @@ export default function Admin() {
             Monitoramento de engajamento e atividade dos usuários.
           </p>
         </div>
+
+        <PremiumManager />
 
         {/* Overview Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
