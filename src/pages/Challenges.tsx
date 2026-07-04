@@ -117,11 +117,11 @@ export default function Challenges() {
         setChallengeProgress(cp2.data || []);
         setStageProgress(sp2.data || []);
       }
-    } catch (e: any) {
+    } catch (e) {
       console.error(e);
       toast({
         title: 'Erro ao carregar desafios',
-        description: e.message ?? String(e),
+        description: e instanceof Error ? e.message : String(e),
         variant: 'destructive',
       });
     } finally {
@@ -194,10 +194,10 @@ export default function Challenges() {
       setSelectedChallenge(null);
       setReflection('');
       await fetchAll();
-    } catch (e: any) {
+    } catch (e) {
       toast({
         title: 'Erro ao concluir',
-        description: e.message ?? String(e),
+        description: e instanceof Error ? e.message : String(e),
         variant: 'destructive',
       });
     } finally {
