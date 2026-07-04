@@ -1,0 +1,553 @@
+<title>Painel do Gestor — Iluminnados</title>
+<style>
+  :root {
+    --paper: #f5f3ee;
+    --paper-raised: #fbfaf7;
+    --ink: #1c1f1d;
+    --ink-soft: #55564f;
+    --accent: #0f6e5c;
+    --accent-strong: #0b5245;
+    --accent-soft: #dceee8;
+    --copper: #a54f0e;
+    --copper-soft: #f3e3d3;
+    --line: #ddd9cf;
+    --line-strong: #c7c2b5;
+    --shadow: 0 1px 2px rgba(28, 31, 29, 0.04), 0 8px 24px rgba(28, 31, 29, 0.05);
+  }
+
+  :root[data-theme="dark"] {
+    --paper: #121613;
+    --paper-raised: #181d19;
+    --ink: #ece9e1;
+    --ink-soft: #a9a89e;
+    --accent: #4fd8b8;
+    --accent-strong: #7fe6cd;
+    --accent-soft: rgba(79, 216, 184, 0.12);
+    --copper: #e29a5c;
+    --copper-soft: rgba(226, 154, 92, 0.13);
+    --line: rgba(255, 255, 255, 0.1);
+    --line-strong: rgba(255, 255, 255, 0.18);
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #121613;
+      --paper-raised: #181d19;
+      --ink: #ece9e1;
+      --ink-soft: #a9a89e;
+      --accent: #4fd8b8;
+      --accent-strong: #7fe6cd;
+      --accent-soft: rgba(79, 216, 184, 0.12);
+      --copper: #e29a5c;
+      --copper-soft: rgba(226, 154, 92, 0.13);
+      --line: rgba(255, 255, 255, 0.1);
+      --line-strong: rgba(255, 255, 255, 0.18);
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
+    }
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 56px 24px 96px;
+  }
+
+  h1, h2, h3 {
+    font-family: "Iowan Old Style", "Palatino Linotype", Georgia, "Times New Roman", serif;
+    font-weight: 600;
+    text-wrap: balance;
+    color: var(--ink);
+    letter-spacing: 0.001em;
+  }
+
+  .num, .money, table td.num-cell, .kpi-value {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+    font-family: ui-monospace, "SF Mono", "Cascadia Code", Consolas, monospace;
+  }
+
+  /* ---- Header ---- */
+  header.doc-head {
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 22px;
+    margin-bottom: 40px;
+  }
+
+  .doc-kicker {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 12.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 14px;
+  }
+
+  h1.doc-title {
+    font-size: 34px;
+    line-height: 1.15;
+    margin: 0 0 8px;
+  }
+
+  .doc-subtitle {
+    font-size: 17px;
+    color: var(--ink-soft);
+    max-width: 54ch;
+  }
+
+  .doc-meta {
+    display: flex;
+    gap: 28px;
+    margin-top: 18px;
+    font-size: 13.5px;
+    color: var(--ink-soft);
+  }
+  .doc-meta strong { color: var(--ink); font-weight: 600; }
+
+  /* ---- Summary cards ---- */
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-bottom: 48px;
+  }
+
+  @media (max-width: 640px) {
+    .summary-grid { grid-template-columns: 1fr; }
+  }
+
+  .summary-card {
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 18px 18px 20px;
+    box-shadow: var(--shadow);
+  }
+
+  .summary-card .layer-tag {
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent-strong);
+    font-weight: 700;
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  .summary-card h3 {
+    font-size: 16.5px;
+    margin: 0 0 6px;
+  }
+
+  .summary-card .kpi-value {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--ink);
+    display: block;
+    margin: 10px 0 4px;
+  }
+
+  .summary-card .kpi-caption {
+    font-size: 12.5px;
+    color: var(--ink-soft);
+  }
+
+  /* ---- Section structure ---- */
+  section.layer {
+    margin-bottom: 46px;
+    padding-top: 4px;
+  }
+
+  .layer-heading {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    border-bottom: 1px solid var(--line-strong);
+    padding-bottom: 10px;
+    margin-bottom: 18px;
+  }
+
+  .layer-number {
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    font-size: 13px;
+    color: var(--accent-strong);
+    border: 1px solid var(--accent);
+    border-radius: 3px;
+    padding: 1px 7px;
+    letter-spacing: 0.02em;
+  }
+
+  .layer-heading h2 {
+    font-size: 22px;
+    margin: 0;
+  }
+
+  .layer-cost-badge {
+    margin-left: auto;
+    font-size: 13px;
+    color: var(--ink-soft);
+    white-space: nowrap;
+  }
+
+  p { margin: 0 0 14px; max-width: 68ch; }
+  .lede { font-size: 16.5px; color: var(--ink-soft); }
+
+  ul.feature-list {
+    list-style: none;
+    margin: 0 0 18px;
+    padding: 0;
+    display: grid;
+    gap: 8px;
+  }
+  ul.feature-list li {
+    padding-left: 20px;
+    position: relative;
+    font-size: 15px;
+  }
+  ul.feature-list li::before {
+    content: "—";
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+  }
+
+  /* ---- Tables ---- */
+  .table-wrap { overflow-x: auto; margin: 16px 0 22px; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    min-width: 480px;
+  }
+  thead th {
+    text-align: left;
+    font-size: 11.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    font-weight: 600;
+    padding: 0 12px 8px 0;
+    border-bottom: 1px solid var(--line-strong);
+  }
+  tbody td {
+    padding: 10px 12px 10px 0;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  td.num-cell, th.num-cell { text-align: right; }
+  td strong { font-weight: 600; }
+  .row-highlight td { background: var(--accent-soft); }
+  .row-highlight td:first-child { border-radius: 4px 0 0 4px; }
+  .row-highlight td:last-child { border-radius: 0 4px 4px 0; }
+
+  /* ---- Callouts ---- */
+  .callout {
+    border-left: 3px solid var(--accent);
+    background: var(--accent-soft);
+    padding: 14px 18px;
+    border-radius: 0 4px 4px 0;
+    margin: 18px 0;
+    font-size: 14.5px;
+  }
+  .callout.warn {
+    border-left-color: var(--copper);
+    background: var(--copper-soft);
+  }
+  .callout p:last-child { margin-bottom: 0; }
+  .callout .callout-label {
+    font-size: 11px;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    font-weight: 700;
+    display: block;
+    margin-bottom: 6px;
+    color: var(--accent-strong);
+  }
+  .callout.warn .callout-label { color: var(--copper); }
+
+  /* ---- Formula box ---- */
+  .formula {
+    background: var(--paper-raised);
+    border: 1px dashed var(--line-strong);
+    border-radius: 4px;
+    padding: 14px 18px;
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    font-size: 13.5px;
+    color: var(--ink-soft);
+    margin: 14px 0 20px;
+    line-height: 1.7;
+  }
+  .formula .op { color: var(--accent-strong); }
+
+  /* ---- Recommendation timeline ---- */
+  .roadmap {
+    display: grid;
+    gap: 14px;
+    margin: 18px 0 8px;
+  }
+  .roadmap-step {
+    display: grid;
+    grid-template-columns: 84px 1fr;
+    gap: 16px;
+    align-items: start;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .roadmap-step:last-child { border-bottom: none; }
+  .roadmap-when {
+    font-size: 12.5px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--accent-strong);
+    font-weight: 700;
+    padding-top: 2px;
+  }
+  .roadmap-step h4 { margin: 0 0 4px; font-size: 15.5px; font-weight: 600; }
+  .roadmap-step p { font-size: 14px; margin-bottom: 0; color: var(--ink-soft); }
+
+  /* ---- Footer ---- */
+  footer.doc-foot {
+    margin-top: 56px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line-strong);
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    display: grid;
+    gap: 6px;
+  }
+
+  a { color: var(--accent-strong); }
+</style>
+
+<div class="page">
+
+  <header class="doc-head">
+    <div class="doc-kicker">
+      <span>Iluminnados · Proposta técnica</span>
+      <span>04 jul 2026</span>
+    </div>
+    <h1 class="doc-title">Painel do Gestor: o que dá pra automatizar, e quanto custa</h1>
+    <p class="doc-subtitle">Resposta técnica ao pedido do Luis Felipe: aderência às tarefas, bloqueio automático de etapas, lembretes via WhatsApp e bloqueio de usuário inadimplente — separado em três camadas de investimento crescente.</p>
+    <div class="doc-meta">
+      <span>Preparado para <strong>Luis Felipe</strong></span>
+      <span>Responsável <strong>AIOX · Emily Susan</strong></span>
+      <span>Projeto <strong>comunidade-nilu</strong></span>
+    </div>
+  </header>
+
+  <section class="summary-grid">
+    <div class="summary-card">
+      <span class="layer-tag">Camada 1</span>
+      <h3>Automação por regras</h3>
+      <span class="kpi-value">R$ 0/mês</span>
+      <span class="kpi-caption">Sem custo de infraestrutura — só tempo de desenvolvimento. Roda no Supabase que já existe.</span>
+    </div>
+    <div class="summary-card">
+      <span class="layer-tag">Camada 2</span>
+      <h3>Alertas via WhatsApp</h3>
+      <span class="kpi-value">R$ 100–250/mês</span>
+      <span class="kpi-caption">Custo fixo de uma API de WhatsApp Business, independente do número de usuários.</span>
+    </div>
+    <div class="summary-card">
+      <span class="layer-tag">Camada 3</span>
+      <h3>IA personalizada</h3>
+      <span class="kpi-value">R$ 8–330/mês</span>
+      <span class="kpi-caption">Varia com o número de usuários ativos — na prática, é a camada mais barata das três.</span>
+    </div>
+  </section>
+
+  <section class="layer">
+    <div class="layer-heading">
+      <span class="layer-number">01</span>
+      <h2>Automação por regras</h2>
+      <span class="layer-cost-badge">R$ 0 de infraestrutura</span>
+    </div>
+    <p class="lede">A maior parte do que o Luis pediu não precisa de IA nenhuma — é lógica de negócio determinística, do tipo "se X aconteceu, faça Y". Isso eu construo direto no código do app, sem custo recorrente.</p>
+
+    <ul class="feature-list">
+      <li><strong>Aderência às tarefas:</strong> já existe a estrutura (check-in Sim/Parcial/Não por tarefa) — falta só transformar em percentual visível no painel do gestor.</li>
+      <li><strong>Bloqueio automático de avanço de etapa:</strong> já implementado — a semana seguinte só libera quando 100% das tarefas da semana atual forem concluídas.</li>
+      <li><strong>Bloqueio de usuário inadimplente:</strong> parcialmente automatizável — ver observação abaixo.</li>
+    </ul>
+
+    <div class="callout warn">
+      <span class="callout-label">Limite real de hoje</span>
+      <p>O plano de assinatura recorrente da InfinitePay não oferece webhook de confirmação de pagamento. Isso significa que o bloqueio automático 100% do usuário inadimplente exigiria trocar o meio de cobrança (para um gateway com webhook, como Stripe ou Mercado Pago Assinaturas) — do contrário, a confirmação continua manual pelo painel <code>/admin</code>, como já funciona hoje.</p>
+    </div>
+  </section>
+
+  <section class="layer">
+    <div class="layer-heading">
+      <span class="layer-number">02</span>
+      <h2>Alertas e lembretes via WhatsApp</h2>
+      <span class="layer-cost-badge">custo fixo mensal</span>
+    </div>
+    <p class="lede">Enviar lembrete de tarefa pendente ou alerta de inatividade pelo WhatsApp exige contratar uma API de mensageria — isso é canal de envio, não inteligência artificial.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Opção</th>
+            <th>Custo estimado</th>
+            <th>Como funciona</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Z-API</strong> (ou similar)</td>
+            <td class="num-cell money">R$ 100–250/mês</td>
+            <td>Plano fixo por número de conexões; mais simples de integrar, é o que a maioria dos projetos desse porte usa no Brasil.</td>
+          </tr>
+          <tr>
+            <td><strong>Meta Cloud API</strong> (oficial)</td>
+            <td class="num-cell money">variável</td>
+            <td>Preço por categoria de conversa (utilidade/marketing), cotação muda com frequência — pedir orçamento atualizado antes de decidir.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout">
+      <span class="callout-label">Recomendação</span>
+      <p>Começar pela Z-API (ou equivalente): custo previsível, integração mais rápida, e já valida a demanda antes de negociar contrato direto com a Meta.</p>
+    </div>
+  </section>
+
+  <section class="layer">
+    <div class="layer-heading">
+      <span class="layer-number">03</span>
+      <h2>Inteligência artificial personalizada</h2>
+      <span class="layer-cost-badge">custo por uso</span>
+    </div>
+    <p class="lede">Aqui entra a parte que o Luis chamou de "a IA decidindo sozinha" — o Radar Pré-Queda e a LUMI escrevendo uma mensagem de intervenção adaptada ao perfil e ao comportamento real de cada usuário, em vez de um texto fixo.</p>
+
+    <p>Cada mensagem gerada por IA consome tokens de entrada (o contexto: perfil PCI, histórico de tarefas, progresso da semana) e de saída (o texto da mensagem). O custo é cobrado por essa quantidade — não por usuário cadastrado, só por mensagem realmente gerada.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Tipo de mensagem</th>
+            <th>Contexto usado</th>
+            <th class="num-cell">Modelo econômico</th>
+            <th class="num-cell">Modelo avançado</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Lembrete leve</strong><br><span style="color:var(--ink-soft); font-size:13px;">ex: "sua tarefa de hoje ainda está pendente"</span></td>
+            <td>Resumo do perfil + últimas 3 tarefas</td>
+            <td class="num-cell money">R$ 0,006</td>
+            <td class="num-cell money">R$ 0,011</td>
+          </tr>
+          <tr>
+            <td><strong>Intervenção completa</strong><br><span style="color:var(--ink-soft); font-size:13px;">ex: Radar Pré-Queda, risco de abandono</span></td>
+            <td>Histórico completo + perfil PCI + dificuldades relatadas</td>
+            <td class="num-cell money">R$ 0,019</td>
+            <td class="num-cell money">R$ 0,039</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p style="font-size: 13px; color: var(--ink-soft);">Modelo econômico = Claude Haiku 4.5. Modelo avançado = Claude Sonnet 5. Valores em reais, câmbio ilustrativo de R$ 5,50/US$ — o custo real da Anthropic é cobrado em dólar e a taxa de câmbio varia.</p>
+
+    <div class="formula">
+      custo/usuário/mês <span class="op">=</span> (lembretes leves × custo leve) <span class="op">+</span> (intervenções × custo intervenção)<br>
+      <span style="color:var(--ink-soft)">exemplo: 8 lembretes leves/mês + 2 intervenções/mês, no modelo econômico</span><br>
+      = (8 × R$ 0,006) <span class="op">+</span> (2 × R$ 0,019) <span class="op">=</span> <strong>R$ 0,08/usuário/mês</strong>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Usuários ativos</th>
+            <th class="num-cell">Modelo econômico</th>
+            <th class="num-cell">Modelo avançado</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>100</td>
+            <td class="num-cell money">R$ 8/mês</td>
+            <td class="num-cell money">R$ 17/mês</td>
+          </tr>
+          <tr>
+            <td>500</td>
+            <td class="num-cell money">R$ 41/mês</td>
+            <td class="num-cell money">R$ 83/mês</td>
+          </tr>
+          <tr class="row-highlight">
+            <td>2.000</td>
+            <td class="num-cell money">R$ 165/mês</td>
+            <td class="num-cell money">R$ 330/mês</td>
+          </tr>
+          <tr>
+            <td>5.000</td>
+            <td class="num-cell money">R$ 412/mês</td>
+            <td class="num-cell money">R$ 825/mês</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout">
+      <span class="callout-label">O achado mais importante desta análise</span>
+      <p>A IA em si é, de longe, a parte mais barata das três camadas. Mesmo com 2.000 usuários ativos gerando mensagens personalizadas todos os dias, o custo de API fica entre R$ 165 e R$ 330/mês — menos do que o próprio plano de WhatsApp. O verdadeiro investimento do Painel do Gestor está no tempo de desenvolvimento, não na inteligência artificial.</p>
+    </div>
+
+    <p style="font-size: 13.5px; color: var(--ink-soft);">Estratégia recomendada: usar o modelo econômico (Haiku) para lembretes de alto volume e reservar o modelo avançado (Sonnet) só para as intervenções de risco de abandono, que são mais raras e exigem mais nuance. Isso mantém o custo perto da coluna da esquerda na tabela acima.</p>
+  </section>
+
+  <section class="layer" style="margin-bottom: 8px;">
+    <div class="layer-heading">
+      <h2 style="font-size: 20px;">Como sequenciar</h2>
+    </div>
+    <div class="roadmap">
+      <div class="roadmap-step">
+        <span class="roadmap-when">Agora</span>
+        <div>
+          <h4>Camada 1 — painel de aderência</h4>
+          <p>Expor no /admin o percentual de aderência por usuário e o status de bloqueio de etapa, reaproveitando dados que já existem no banco. Sem custo adicional.</p>
+        </div>
+      </div>
+      <div class="roadmap-step">
+        <span class="roadmap-when">Em seguida</span>
+        <div>
+          <h4>Camada 2 — lembretes fixos por WhatsApp</h4>
+          <p>Contratar a API de mensageria e mandar lembretes com texto fixo (não personalizado por IA ainda) para quem está com tarefa atrasada. Valida se o canal aumenta o engajamento antes de investir na camada de IA.</p>
+        </div>
+      </div>
+      <div class="roadmap-step">
+        <span class="roadmap-when">Depois</span>
+        <div>
+          <h4>Camada 3 — mensagens personalizadas por IA</h4>
+          <p>Trocar o texto fixo por geração via Claude, usando o perfil PCI e o comportamento real do usuário — o Radar Pré-Queda como estava desenhado desde o início do projeto.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="doc-foot">
+    <span>Preços da API da Anthropic (Claude) verificados em julho de 2026 — sujeitos a alteração; reconferir antes de orçar em definitivo.</span>
+    <span>Preços de WhatsApp Business API são estimativas de mercado — pedir cotação atualizada ao contratar.</span>
+    <span>Documento técnico complementar ao projeto <code>comunidade-nilu</code> (Iluminnados).</span>
+  </footer>
+
+</div>
