@@ -3,8 +3,13 @@ import { Layout } from '@/components/Layout';
 import { safeSpacePosts as initialPosts, SafeSpacePost } from '@/lib/mockData';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 import { Heart, MessageCircle, Send, Shield, Eye, EyeOff } from 'lucide-react';
+
+// Story 1.3: publicação real ainda não persiste (depende da Story 3, sobre o
+// modelo LGPD da Story 1.2). Trocar para true quando a persistência subir.
+const SAFESPACE_PERSISTENCE_ENABLED = false;
 
 export default function SafeSpace() {
   const [posts, setPosts] = useState<SafeSpacePost[]>(initialPosts);
@@ -13,6 +18,8 @@ export default function SafeSpace() {
   const [newComment, setNewComment] = useState<{ [key: string]: string }>({});
 
   const handlePost = () => {
+    if (!SAFESPACE_PERSISTENCE_ENABLED) return;
+
     if (newPost.trim().length < 10) {
       toast({
         title: 'Texto muito curto',
@@ -87,6 +94,9 @@ export default function SafeSpace() {
             <h1 className="text-3xl font-bold">
               Espaço <span className="neon-text">Seguro</span>
             </h1>
+            {!SAFESPACE_PERSISTENCE_ENABLED && (
+              <Badge variant="secondary">Em breve</Badge>
+            )}
           </div>
           <p className="text-muted-foreground">
             Um lugar para desabafar sem julgamentos. Tudo aqui é anônimo e respeitoso.
@@ -97,7 +107,11 @@ export default function SafeSpace() {
         <div className="glass-card p-6">
           <div className="flex items-center gap-2 mb-4 text-sm text-muted-foreground">
             <EyeOff className="w-4 h-4" />
-            <span>Sua identidade está protegida</span>
+            <span>
+              {SAFESPACE_PERSISTENCE_ENABLED
+                ? 'Sua identidade está protegida'
+                : 'Estamos cuidando com carinho de um jeito seguro de guardar o que você compartilha aqui. Em breve este espaço vai poder acolher seu desabafo de verdade — por enquanto, sinta-se à vontade para escrever como um rascunho, só para organizar o que sente.'}
+            </span>
           </div>
           <Textarea
             placeholder="O que você gostaria de compartilhar? Este é um espaço seguro..."
@@ -105,8 +119,9 @@ export default function SafeSpace() {
             onChange={(e) => setNewPost(e.target.value)}
             className="min-h-[100px] bg-muted/50 border-border/50 focus:border-primary mb-4"
           />
-          <Button 
+          <Button
             onClick={handlePost}
+            disabled={!SAFESPACE_PERSISTENCE_ENABLED}
             className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
           >
             <Send className="w-4 h-4 mr-2" />
