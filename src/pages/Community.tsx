@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Layout } from '@/components/Layout';
-import { activities } from '@/lib/mockData';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
 import { Users, Heart, Hand, Circle, Sparkles, Wifi, Loader2 } from 'lucide-react';
@@ -248,31 +247,10 @@ export default function Community() {
               <span>Atividade recente</span>
             </div>
 
-            <div className="glass-card p-4 space-y-3">
-              {activities.map((activity) => (
-                <div 
-                  key={activity.id}
-                  className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 animate-fade-in"
-                >
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                    activity.type === 'advance' ? 'bg-primary/20 text-primary' :
-                    activity.type === 'complete' ? 'bg-accent/20 text-accent' :
-                    activity.type === 'share' ? 'bg-secondary/20 text-secondary' :
-                    'bg-muted text-muted-foreground'
-                  }`}>
-                    {activity.type === 'advance' && '⬆️'}
-                    {activity.type === 'complete' && '✅'}
-                    {activity.type === 'share' && '💬'}
-                    {activity.type === 'join' && '👋'}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm">{activity.message}</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {formatTimeAgo(activity.timestamp)}
-                    </p>
-                  </div>
-                </div>
-              ))}
+            <div className="glass-card p-4">
+              <p className="text-sm text-muted-foreground">
+                Em breve, aqui você vai acompanhar a atividade real da comunidade — quem entrou, avançou de desafio ou compartilhou algo nas outras áreas do app.
+              </p>
             </div>
 
             {/* Community Stats */}
@@ -302,13 +280,4 @@ export default function Community() {
       </div>
     </Layout>
   );
-}
-
-function formatTimeAgo(date: Date): string {
-  const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
-  
-  if (seconds < 60) return 'agora';
-  if (seconds < 3600) return `${Math.floor(seconds / 60)} min atrás`;
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h atrás`;
-  return `${Math.floor(seconds / 86400)}d atrás`;
 }
