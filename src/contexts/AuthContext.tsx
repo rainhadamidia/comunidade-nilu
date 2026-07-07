@@ -59,6 +59,7 @@ interface AuthContextType {
   doCheckIn: () => boolean;
   logSelfCare: (activities: string[]) => void;
   getAllUsers: () => User[];
+  refreshPoints: () => Promise<void>;
   userTips: UserTip[];
   addUserTip: (tip: Omit<UserTip, 'id' | 'userId' | 'userNickname' | 'userAvatar' | 'likes' | 'likedBy' | 'comments' | 'savedBy' | 'createdAt'>) => void;
   likeUserTip: (tipId: string) => void;
@@ -95,10 +96,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
       setSession(newSession);
       if (newSession?.user) {
+        // isLoading precisa ir pra true JA (sincrono), senao as telas que
+        // dependem de `user` (ex: gate do Index) veem isLoading=false e
+        // user=null nesse intervalo e mandam de volta pro /auth antes do
+        // perfil terminar de carregar — era isso que fazia o login parecer
+        // que "nao entrou de primeira".
+        setIsLoading(true);
         // Defer profile loading to avoid deadlocks
         setTimeout(() => loadUserProfile(newSession.user), 0);
       } else {
         setUser(null);
+        setIsLoading(false);
         localStorage.removeItem('iluminnados_user');
       }
     });
@@ -165,14 +173,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const saveUser = (updatedUser: User) => {
     setUser(updatedUser);
-    // Persist gamification data per-user locally
+    // Persist gamification data (não-pontos) por usuário, só localmente
     localStorage.setItem(`iluminnados_user_${updatedUser.id}`, JSON.stringify(updatedUser));
-    // Sync points to Supabase profile
-    supabase
-      .from('profiles')
-      .update({ points: updatedUser.points })
-      .eq('user_id', updatedUser.id)
-      .then();
   };
 
   const addPointAction = (action: string, points: number) => {
@@ -180,6 +182,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       { action, points, timestamp: new Date() },
       ...prev.slice(0, 9)
     ]);
+  };
+
+  // Única porta de entrada para conceder pontos: incrementa de forma atômica
+  // no banco (mesma função usada pelo módulo PSI) e sincroniza o total real
+  // de volta pro estado local. Nunca sobrescreve profiles.points com um
+  // valor calculado no cliente — é isso que causava pontos "sumindo".
+  const awardPointsAndSync = async (amount: number, action: string) => {
+    if (!user) return;
+    const { data: newTotal, error } = await supabase.rpc('award_points', {
+      _user_id: user.id,
+      _amount: amount,
+    });
+    if (error) {
+      console.error('Erro ao conceder pontos:', error);
+      return;
+    }
+    setUser(prev => {
+      if (!prev) return prev;
+      const updated = { ...prev, points: newTotal ?? prev.points + amount };
+      localStorage.setItem(`iluminnados_user_${updated.id}`, JSON.stringify(updated));
+      return updated;
+    });
+    addPointAction(action, amount);
+  };
+
+  const refreshPoints = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from('profiles')
+      .select('points')
+      .eq('user_id', user.id)
+      .maybeSingle();
+    if (data) {
+      setUser(prev => (prev ? { ...prev, points: data.points } : prev));
+    }
   };
 
   const login = async (email: string, password: string) => {
@@ -231,18 +268,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const addPoints = (amount: number, action: string) => {
     if (!user) return;
-    
+
     const today = new Date().toISOString().split('T')[0];
-    const updatedUser = {
-      ...user,
-      points: user.points + amount,
-      activeDays: user.activeDays.includes(today) 
-        ? user.activeDays 
-        : [...user.activeDays, today],
-    };
-    
-    saveUser(updatedUser);
-    addPointAction(action, amount);
+    if (!user.activeDays.includes(today)) {
+      saveUser({ ...user, activeDays: [...user.activeDays, today] });
+    }
+
+    awardPointsAndSync(amount, action);
   };
 
   const doCheckIn = (): boolean => {
@@ -253,18 +285,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (user.lastCheckIn === today) {
       return false;
     }
-    
+
     const updatedUser = {
       ...user,
-      points: user.points + POINTS.CHECK_IN,
       lastCheckIn: today,
       activeDays: user.activeDays.includes(today)
         ? user.activeDays
         : [...user.activeDays, today],
     };
-    
+
     saveUser(updatedUser);
-    addPointAction('Check-in diário', POINTS.CHECK_IN);
+    awardPointsAndSync(POINTS.CHECK_IN, 'Check-in diário');
     return true;
   };
 
@@ -276,14 +307,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       ...user,
       completedChallenges: [...user.completedChallenges, challengeId],
       progress: Math.min(100, ((user.completedChallenges.length + 1) / 8) * 100),
-      points: user.points + POINTS.CHALLENGE_COMPLETE,
       activeDays: user.activeDays.includes(today)
         ? user.activeDays
         : [...user.activeDays, today],
     };
-    
+
     saveUser(updatedUser);
-    addPointAction('Desafio concluído', POINTS.CHALLENGE_COMPLETE);
+    awardPointsAndSync(POINTS.CHALLENGE_COMPLETE, 'Desafio concluído');
   };
 
   const completeAnnualChallenge = (challengeId: number) => {
@@ -295,14 +325,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const updatedUser = {
       ...user,
       completedAnnualChallenges: [...user.completedAnnualChallenges, challengeId],
-      points: user.points + POINTS.ANNUAL_CHALLENGE,
       activeDays: user.activeDays.includes(today)
         ? user.activeDays
         : [...user.activeDays, today],
     };
-    
+
     saveUser(updatedUser);
-    addPointAction('Desafio anual concluído', POINTS.ANNUAL_CHALLENGE);
+    awardPointsAndSync(POINTS.ANNUAL_CHALLENGE, 'Desafio anual concluído');
   };
 
   const logSelfCare = (activities: string[]) => {
@@ -334,14 +363,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const updatedUser = {
       ...user,
       selfCareLogs: updatedLogs,
-      points: user.points + pointsEarned,
       activeDays: user.activeDays.includes(today)
         ? user.activeDays
         : [...user.activeDays, today],
     };
-    
+
     saveUser(updatedUser);
-    addPointAction('Autocuidado registrado', pointsEarned);
+    awardPointsAndSync(pointsEarned, 'Autocuidado registrado');
   };
 
   const getAllUsers = (): User[] => {
@@ -467,6 +495,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       doCheckIn,
       logSelfCare,
       getAllUsers,
+      refreshPoints,
       userTips,
       addUserTip,
       likeUserTip,

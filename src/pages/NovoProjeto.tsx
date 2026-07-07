@@ -16,7 +16,7 @@ import { awardPoints, NEURAL_COINS } from '@/lib/points';
 const CATEGORIAS = ['Negócio', 'Carreira', 'Financeiro', 'Relacionamento', 'Saúde', 'Pessoal', 'Outro'];
 
 export default function NovoProjeto() {
-  const { user } = useAuth();
+  const { user, refreshPoints } = useAuth();
   const navigate = useNavigate();
   const [nome, setNome] = useState('');
   const [descricao, setDescricao] = useState('');
@@ -126,6 +126,7 @@ export default function NovoProjeto() {
       }
 
       await awardPoints(user.id, NEURAL_COINS.PSI_CADASTRADO);
+      await refreshPoints();
 
       toast({ title: 'Projeto criado!', description: 'Sua jornada de 4 semanas já está pronta.' });
       navigate('/');
