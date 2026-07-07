@@ -9,20 +9,6 @@ export interface Challenge {
   status: 'locked' | 'active' | 'completed';
 }
 
-export interface CommunityMember {
-  id: string;
-  nickname: string;
-  avatar: string;
-  status: 'online' | 'em jornada' | 'offline';
-}
-
-export interface Activity {
-  id: string;
-  type: 'advance' | 'share' | 'complete' | 'join';
-  message: string;
-  timestamp: Date;
-}
-
 export interface SafeSpacePost {
   id: string;
   content: string;
@@ -113,25 +99,6 @@ export const challenges: Challenge[] = [
     reflection: "Onde essas listas se encontram?",
     status: 'locked'
   }
-];
-
-export const communityMembers: CommunityMember[] = [
-  { id: '1', nickname: 'Luz_Interior', avatar: '🌟', status: 'online' },
-  { id: '2', nickname: 'Caminhante_Zen', avatar: '🧘', status: 'em jornada' },
-  { id: '3', nickname: 'Alma_Livre', avatar: '🦋', status: 'online' },
-  { id: '4', nickname: 'Ser_Desperto', avatar: '☀️', status: 'em jornada' },
-  { id: '5', nickname: 'Consciência_Plena', avatar: '🌙', status: 'offline' },
-  { id: '6', nickname: 'Buscador_Eterno', avatar: '🔮', status: 'online' },
-  { id: '7', nickname: 'Flor_de_Lotus', avatar: '🪷', status: 'em jornada' },
-  { id: '8', nickname: 'Guerreiro_Paz', avatar: '⚔️', status: 'online' },
-];
-
-export const activities: Activity[] = [
-  { id: '1', type: 'advance', message: 'Luz_Interior avançou para o Desafio 4', timestamp: new Date(Date.now() - 120000) },
-  { id: '2', type: 'share', message: 'Novo compartilhamento na comunidade', timestamp: new Date(Date.now() - 300000) },
-  { id: '3', type: 'complete', message: 'Caminhante_Zen completou "O Espelho Interior"', timestamp: new Date(Date.now() - 600000) },
-  { id: '4', type: 'join', message: 'Ser_Desperto entrou na Praça', timestamp: new Date(Date.now() - 900000) },
-  { id: '5', type: 'advance', message: 'Alma_Livre desbloqueou um novo bônus', timestamp: new Date(Date.now() - 1200000) },
 ];
 
 export const safeSpacePosts: SafeSpacePost[] = [

@@ -1,5 +1,5 @@
 import { useAuth } from '@/contexts/AuthContext';
-import { challenges, communityMembers, activities, userBonuses } from '@/lib/mockData';
+import { challenges, userBonuses } from '@/lib/mockData';
 import { Layout } from '@/components/Layout';
 import { Progress } from '@/components/ui/progress';
 import { useNavigate } from 'react-router-dom';
@@ -112,35 +112,12 @@ export default function Dashboard() {
               <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-secondary transition-colors" />
             </div>
 
-            {/* Member Avatars */}
-            <div className="flex items-center mb-4">
-              <div className="flex -space-x-2">
-                {communityMembers.slice(0, 5).map((member) => (
-                  <div 
-                    key={member.id}
-                    className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-xl border-2 border-background"
-                    title={member.nickname}
-                  >
-                    {member.avatar}
-                  </div>
-                ))}
-              </div>
-              <span className="ml-3 text-sm text-muted-foreground">
-                +{communityMembers.length - 5} membros ativos
+            {/* Convite honesto — sem inventar membros/atividade */}
+            <div className="flex items-center gap-2 text-sm p-2 rounded-lg bg-muted/30">
+              <Sparkles className="w-4 h-4 text-secondary" />
+              <span className="text-muted-foreground">
+                Você não está sozinho nessa jornada. Veja quem mais está por lá.
               </span>
-            </div>
-
-            {/* Recent Activity */}
-            <div className="space-y-2">
-              {activities.slice(0, 2).map((activity) => (
-                <div 
-                  key={activity.id}
-                  className="flex items-center gap-2 text-sm p-2 rounded-lg bg-muted/30"
-                >
-                  <Sparkles className="w-4 h-4 text-secondary" />
-                  <span className="text-muted-foreground">{activity.message}</span>
-                </div>
-              ))}
             </div>
           </div>
         </div>
