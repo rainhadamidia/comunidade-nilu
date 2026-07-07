@@ -96,10 +96,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
       setSession(newSession);
       if (newSession?.user) {
+        // isLoading precisa ir pra true JA (sincrono), senao as telas que
+        // dependem de `user` (ex: gate do Index) veem isLoading=false e
+        // user=null nesse intervalo e mandam de volta pro /auth antes do
+        // perfil terminar de carregar — era isso que fazia o login parecer
+        // que "nao entrou de primeira".
+        setIsLoading(true);
         // Defer profile loading to avoid deadlocks
         setTimeout(() => loadUserProfile(newSession.user), 0);
       } else {
         setUser(null);
+        setIsLoading(false);
         localStorage.removeItem('iluminnados_user');
       }
     });
