@@ -67,11 +67,23 @@ export default function Auth() {
             navigate('/');
           }
         } else {
-          toast({
-            title: 'Erro ao criar conta',
-            description: result.error || 'Este e-mail já está em uso.',
-            variant: 'destructive',
-          });
+          const jaCadastrado = result.error?.toLowerCase().includes('already registered')
+            || result.error?.toLowerCase().includes('already exists')
+            || result.error?.toLowerCase().includes('já está em uso');
+
+          if (jaCadastrado) {
+            toast({
+              title: 'Você já tem uma conta! 👋',
+              description: 'Esse e-mail já está cadastrado. Faça login com sua senha.',
+            });
+            setIsLogin(true);
+          } else {
+            toast({
+              title: 'Erro ao criar conta',
+              description: result.error || 'Tente novamente em instantes.',
+              variant: 'destructive',
+            });
+          }
         }
       }
     } finally {
