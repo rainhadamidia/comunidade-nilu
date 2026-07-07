@@ -96,7 +96,7 @@ export default function Premium() {
 
           <div className="bg-primary/10 border border-primary/30 rounded-lg p-4 text-center">
             <p className="text-sm text-muted-foreground">
-              Assinatura de R$ 797/mês. Após confirmar o pagamento, seu acesso Premium é liberado automaticamente.
+              Assinatura de R$ 29,90/mês. Após confirmar o pagamento, seu acesso Premium é liberado automaticamente.
             </p>
           </div>
 

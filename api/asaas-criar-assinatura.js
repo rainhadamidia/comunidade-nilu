@@ -8,7 +8,7 @@
    - ASAAS_ENV     → "sandbox" (padrão/teste) ou "production"
 ============================================================ */
 
-const PLANO_VALOR = 797;
+const PLANO_VALOR = 29.9;
 const PLANO_CICLO = 'MONTHLY';
 const PLANO_DESCRICAO = 'Iluminnados Premium — assinatura mensal';
 
