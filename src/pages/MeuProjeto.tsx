@@ -9,6 +9,7 @@ import { toast } from '@/hooks/use-toast';
 import { Lock, CheckCircle2, Circle, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { awardPoints, pontosPorDificuldade, NEURAL_COINS } from '@/lib/points';
+import { Trophy } from 'lucide-react';
 
 interface Task {
   id: string;
@@ -32,10 +33,11 @@ interface Project {
   id: string;
   nome: string;
   objetivo: string;
+  status: string;
 }
 
 export default function MeuProjeto() {
-  const { user } = useAuth();
+  const { user, refreshPoints } = useAuth();
   const navigate = useNavigate();
   const [project, setProject] = useState<Project | null>(null);
   const [weeks, setWeeks] = useState<Week[]>([]);
@@ -54,11 +56,12 @@ export default function MeuProjeto() {
     if (!user) return;
     setCarregando(true);
 
+    // Busca o projeto mais recente independente do status — um projeto
+    // concluído não deve "sumir" da tela, só ganhar um selo de concluído.
     const { data: projectData } = await supabase
       .from('psi_projects')
-      .select('id, nome, objetivo')
+      .select('id, nome, objetivo, status')
       .eq('user_id', user.id)
-      .eq('status', 'active')
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -159,6 +162,7 @@ export default function MeuProjeto() {
       toast({ title: 'Tarefa concluída!', description: `+${pontosPorDificuldade(task.dificuldade)} Neural Coins` });
     }
 
+    await refreshPoints();
     setCheckinAberto(null);
     carregarProjeto();
   };
@@ -180,6 +184,19 @@ export default function MeuProjeto() {
           </h1>
           <p className="text-muted-foreground">{project?.objetivo}</p>
         </div>
+
+        {project?.status === 'completed' && (
+          <div className="glass-card p-4 border border-accent/50 bg-accent/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <Trophy className="w-8 h-8 text-accent shrink-0" />
+              <div>
+                <p className="font-semibold">Projeto concluído!</p>
+                <p className="text-sm text-muted-foreground">Suas 4 semanas ficam registradas aqui, nada se perde.</p>
+              </div>
+            </div>
+            <Button size="sm" onClick={() => navigate('/novo-projeto')}>Começar novo projeto</Button>
+          </div>
+        )}
 
         {weeks.map((week) => {
           const tarefas = tasksByWeek[week.id] ?? [];

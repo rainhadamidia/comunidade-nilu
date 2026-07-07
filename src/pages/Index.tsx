@@ -33,11 +33,12 @@ const Index = () => {
           return;
         }
 
+        // Qualquer projeto já criado (ativo ou concluído) libera o Dashboard —
+        // só quem nunca cadastrou nenhum PSI é mandado pra tela de criação.
         const { data: psiData } = await supabase
           .from('psi_projects')
           .select('id')
           .eq('user_id', user.id)
-          .eq('status', 'active')
           .limit(1);
 
         if (!ativo) return;
