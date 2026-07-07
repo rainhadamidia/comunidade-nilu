@@ -5,9 +5,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { toast } from '@/hooks/use-toast';
-import { ArrowRight, ArrowLeft } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Download, Mail, Loader2 } from 'lucide-react';
 import { PERGUNTAS, ESCALA, PERFIS, type TraitId } from '@/lib/pci/content';
 import { calcularScores, gerarRelatorio, type Respostas, type RelatorioPCI } from '@/lib/pci/engine';
+import { gerarPdfRelatorio } from '@/lib/pci/pdf';
 import { awardPoints, NEURAL_COINS } from '@/lib/points';
 
 type Etapa = 'intro' | 'quiz' | 'resultado';
@@ -151,10 +152,46 @@ export default function Diagnostico() {
 }
 
 function ResultadoPCI({ relatorio, onContinuar }: { relatorio: RelatorioPCI; onContinuar: () => void }) {
+  const { user } = useAuth();
   const dominante = PERFIS[relatorio.dominante];
   const secundario = PERFIS[relatorio.secundario];
   const sinergia = relatorio.dinamica.find(b => b.tipo === 'sinergia');
   const conflito = relatorio.dinamica.find(b => b.tipo === 'conflito');
+  const [enviando, setEnviando] = useState(false);
+
+  const primeiroNome = (user?.nickname || 'Você').trim().split(' ')[0];
+
+  const baixarPdf = () => {
+    const doc = gerarPdfRelatorio(relatorio, primeiroNome);
+    doc.save('relatorio-iluminnare.pdf');
+  };
+
+  const enviarPorEmail = async () => {
+    if (!user?.email) {
+      toast({ title: 'E-mail não encontrado', description: 'Não foi possível identificar seu e-mail de cadastro.', variant: 'destructive' });
+      return;
+    }
+    setEnviando(true);
+    try {
+      const doc = gerarPdfRelatorio(relatorio, primeiroNome);
+      const pdfBase64 = doc.output('datauristring');
+
+      const resp = await fetch('/api/enviar-relatorio', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nome: primeiroNome, email: user.email, pdfBase64 }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || 'Falha ao enviar e-mail');
+
+      toast({ title: 'Relatório enviado!', description: `Confira sua caixa de entrada em ${user.email}.` });
+    } catch (e) {
+      console.error('Erro ao enviar relatório por e-mail:', e);
+      toast({ title: 'Erro ao enviar por e-mail', description: 'Tente novamente em instantes.', variant: 'destructive' });
+    } finally {
+      setEnviando(false);
+    }
+  };
 
   return (
     <div className="glass-card p-8 space-y-6">
@@ -203,6 +240,17 @@ function ResultadoPCI({ relatorio, onContinuar }: { relatorio: RelatorioPCI; onC
           <p className="text-sm">{relatorio.psi.estrategia}</p>
         </div>
       )}
+
+      <div className="grid grid-cols-2 gap-3">
+        <Button variant="outline" className="w-full" onClick={baixarPdf}>
+          <Download className="w-4 h-4 mr-2" />
+          Baixar PDF
+        </Button>
+        <Button variant="outline" className="w-full" onClick={enviarPorEmail} disabled={enviando}>
+          {enviando ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Mail className="w-4 h-4 mr-2" />}
+          {enviando ? 'Enviando...' : 'Enviar por e-mail'}
+        </Button>
+      </div>
 
       <Button
         className="w-full bg-primary hover:bg-primary/90 text-primary-foreground neon-glow"
