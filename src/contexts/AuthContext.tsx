@@ -319,7 +319,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
     
     const existingLogIndex = user.selfCareLogs.findIndex(log => log.date === today);
-    let updatedLogs = [...user.selfCareLogs];
+    const updatedLogs = [...user.selfCareLogs];
     
     if (existingLogIndex >= 0) {
       updatedLogs[existingLogIndex] = {
@@ -346,7 +346,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const getAllUsers = (): User[] => {
     const savedUsers = JSON.parse(localStorage.getItem('iluminnados_users') || '[]');
-    return savedUsers.map((u: any) => {
+    return savedUsers.map((u: Record<string, unknown>) => {
       const { password, ...userWithoutPassword } = u;
       return {
         ...userWithoutPassword,
@@ -354,7 +354,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         activeDays: userWithoutPassword.activeDays || [],
         selfCareLogs: userWithoutPassword.selfCareLogs || [],
         completedAnnualChallenges: userWithoutPassword.completedAnnualChallenges || [],
-      };
+      } as User;
     });
   };
 

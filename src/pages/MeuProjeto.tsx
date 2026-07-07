@@ -86,7 +86,7 @@ export default function MeuProjeto() {
         .order('ordem');
 
       const grouped: Record<string, Task[]> = {};
-      (tasksData ?? []).forEach((t: any) => {
+      (tasksData ?? []).forEach((t: Task & { week_id: string }) => {
         if (!grouped[t.week_id]) grouped[t.week_id] = [];
         grouped[t.week_id].push(t);
       });

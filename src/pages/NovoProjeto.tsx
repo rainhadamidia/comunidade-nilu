@@ -22,7 +22,7 @@ export default function NovoProjeto() {
   const [descricao, setDescricao] = useState('');
   const [objetivo, setObjetivo] = useState('');
   const [prazoDias, setPrazoDias] = useState('90');
-  const [prioridade, setPrioridade] = useState('media');
+  const [prioridade, setPrioridade] = useState<'baixa' | 'media' | 'alta'>('media');
   const [categoria, setCategoria] = useState('Negócio');
   const [salvando, setSalvando] = useState(false);
   const [verificandoLimite, setVerificandoLimite] = useState(true);
@@ -224,7 +224,7 @@ export default function NovoProjeto() {
 
             <div className="space-y-2">
               <Label>Prioridade</Label>
-              <Select value={prioridade} onValueChange={setPrioridade}>
+              <Select value={prioridade} onValueChange={(v) => setPrioridade(v as 'baixa' | 'media' | 'alta')}>
                 <SelectTrigger className="bg-muted/50 border-border/50"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="baixa">Baixa</SelectItem>

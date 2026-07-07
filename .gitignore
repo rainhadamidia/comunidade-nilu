@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# Environment variables (DBT-S04/SYS-01 - docs/prd/technical-debt-assessment.md)
+.env
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
