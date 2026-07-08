@@ -1,8 +1,11 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, ArrowRight, Sparkles, Infinity as InfinityIcon, Brain, Users, BarChart3 } from 'lucide-react';
-
-const LINK_ASSINATURA = 'https://invoice.infinitepay.io/plans/rainhadamidia-ia/x4KWrEaqAW';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { toast } from '@/hooks/use-toast';
+import { ArrowLeft, ArrowRight, Sparkles, Infinity as InfinityIcon, Brain, Users, BarChart3, Loader2 } from 'lucide-react';
 
 const BENEFICIOS = [
   { icon: InfinityIcon, texto: 'Projetos (PSI) ilimitados, simultâneos' },
@@ -14,6 +17,35 @@ const BENEFICIOS = [
 
 export default function Premium() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [cpf, setCpf] = useState('');
+  const [processando, setProcessando] = useState(false);
+
+  const assinar = async () => {
+    if (!user) return;
+    const cpfLimpo = cpf.replace(/\D/g, '');
+    if (cpfLimpo.length !== 11 && cpfLimpo.length !== 14) {
+      toast({ title: 'CPF inválido', description: 'Confira o CPF digitado.', variant: 'destructive' });
+      return;
+    }
+
+    setProcessando(true);
+    try {
+      const resp = await fetch('/api/asaas-criar-assinatura', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, nome: user.nickname, email: user.email, cpf: cpfLimpo }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || 'Falha ao gerar assinatura');
+
+      window.location.href = data.invoiceUrl;
+    } catch (e) {
+      console.error('Erro ao criar assinatura Asaas:', e);
+      toast({ title: 'Erro ao gerar pagamento', description: 'Tente novamente em instantes.', variant: 'destructive' });
+      setProcessando(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
@@ -41,16 +73,30 @@ export default function Premium() {
             ))}
           </div>
 
-          <a href={LINK_ASSINATURA} target="_blank" rel="noopener noreferrer" className="block">
-            <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground neon-glow">
-              Assinar Premium
-              <ArrowRight className="w-5 h-5 ml-2" />
-            </Button>
-          </a>
+          <div className="space-y-2">
+            <Label htmlFor="cpf">Seu CPF (necessário para gerar a cobrança)</Label>
+            <Input
+              id="cpf"
+              value={cpf}
+              onChange={(e) => setCpf(e.target.value)}
+              placeholder="000.000.000-00"
+              className="bg-muted/50 border-border/50"
+            />
+          </div>
+
+          <Button
+            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground neon-glow"
+            onClick={assinar}
+            disabled={processando}
+          >
+            {processando ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : null}
+            {processando ? 'Gerando pagamento...' : 'Assinar Premium'}
+            {!processando && <ArrowRight className="w-5 h-5 ml-2" />}
+          </Button>
 
           <div className="bg-primary/10 border border-primary/30 rounded-lg p-4 text-center">
             <p className="text-sm text-muted-foreground">
-              Após confirmar o pagamento, seu acesso Premium é liberado manualmente em até algumas horas.
+              Assinatura de R$ 797/mês. Após confirmar o pagamento, seu acesso Premium é liberado automaticamente.
             </p>
           </div>
 
